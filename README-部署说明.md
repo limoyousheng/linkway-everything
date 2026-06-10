@@ -1,87 +1,179 @@
-# 链接跳转 — 部署说明
+# 链接跳转
 
-把这个目录拷到另一台 Windows 电脑上（U盘、网盘、git clone 都可以），**双击 `链接跳转.cmd`** 即可启动。
+> 一个装在单文件 HTML 里的私人链接收藏夹。玻璃卡片、玻璃侧边栏、长按拖拽排序、自定义分类/图标/颜色。**纯本地，所有数据存浏览器 localStorage，不上任何服务器。**
 
-## 两种使用方式
+---
 
-| 方式 | 适合场景 | 怎么做 |
-|---|---|---|
-| **离线（推荐）** | 没网、跨电脑、纯本地 | 浏览器直接打开 `链接跳转.html`（或 `file://` 双击）。Tailwind + SortableJS 已本地化（`tailwindcss.js` / `sortable.min.js`），不需要联网拉样式和拖拽库。 |
-| **在线 + state-server** | 要"自动抓图标"和"自动抓描述"功能 | 双击 `链接跳转.cmd` 拉起 8765（静态）+ 9001（抓取代理）。 |
+## 30 秒上手
 
-**离线与在线的差异只在"自动抓"那俩按钮** —— 其他功能（查看/编辑/删除/搜索/分类管理/主题切换/拖拽重排）都正常工作。
+1. **下载**这 7 个文件（git clone / GitHub ZIP / U 盘拷）：
 
-## 一次性准备
+   ```
+   链接跳转.html       ← 主页面，双击它
+   链接跳转.cmd        ← （可选）一键启动脚本
+   state-server.py     ← （可选）自动抓图标/抓描述的本地代理
+   tailwindcss.js      ← 样式库（离线用，已本地化）
+   sortable.min.js     ← 拖拽库（离线用，已本地化）
+   README-部署说明.md  ← 你正在看的这个文件
+   .gitignore
+   ```
 
-另一台电脑需要：
+2. **双击 `链接跳转.html`**，浏览器打开 → 直接用。
 
-1. **Python 3.8+**
+就这么简单。**不需要装任何东西、不需要联网、不需要 Python。**
+
+---
+
+## 你能用它做什么
+
+- **添加链接**：点「刻印新站点」→ 填网址 + 名称 + 分类 → 保存
+- **搜索**：顶部搜索框，按名称/描述/网址/分类过滤
+- **分类管理**：左侧栏底部「创建分类」按钮，可以重命名、换颜色、换图标、删除
+- **拖拽排序**：长按卡片 75ms → 拖到目标位置；拖到左侧栏分类可以换分类
+- **主题切换**：右上角太阳/月亮图标，深色/浅色
+- **编辑/删除**：卡片右上角三点按钮
+- **每个分类都能**：
+  - 10 种预设颜色 + **自定义颜色**（用 color picker 选任意颜色）
+  - 20 种 Material Symbols 图标任选
+  - 受保护的「其他」兜底分类（删不掉、改不了名字）
+
+---
+
+## 两种使用模式
+
+### 模式一：纯离线（默认就够用）
+
+直接双击 `链接跳转.html`，浏览器用 `file://` 打开。
+
+- ✅ **完整可用**：所有功能（添加/编辑/删除/搜索/拖拽/主题/分类/图标/颜色）
+- ✅ **完全离线**：Tailwind 和 SortableJS 都已打包在 `tailwindcss.js` 和 `sortable.min.js`，不需要联网
+- ❌ 不能「自动抓图标」和「自动抓描述」（需要联网才能抓别人的网站）
+
+> **大多数人就用这个模式。** 把这 7 个文件拷给任何人，**双击 HTML 就能用**。
+
+### 模式二：离线 + 自动抓（可选增强）
+
+如果你想用「自动抓图标」「自动抓描述」两个按钮：
+
+1. **装一次 Python 3.8+**（如果没装过）
    - 下载：<https://www.python.org/downloads/>
-   - 安装时**必须勾选** `Add Python to PATH`（第一屏底部那个复选框）
-   - 安装完新开一个 cmd 窗口跑 `pythonw --version` 验证
+   - 安装时**必须**勾选 `Add Python to PATH`（安装界面第一屏底部的复选框）
+   - 装完新开一个 cmd 窗口，跑 `python --version` 验证
 
-2. **Microsoft Edge**（Win10/11 默认自带）
+2. **双击 `链接跳转.cmd`**，它会自动：
+   - 启动静态服务（端口 8765）
+   - 启动抓取代理（端口 9001）
+   - 用 Edge 打开仪表盘
 
-不需要 node、npm、git、任何包管理器。
+> 抓图标/抓描述的原理：`state-server.py` 用 Python 抓目标站点的 HTML，绕过浏览器的 CORS 限制，从 `<link rel="icon">` 找图标、从 `<meta description>` 找描述。**完全本地运行，不经过任何第三方服务**。
 
-## 启动方式
+---
 
-1. 把整个 `1231` 文件夹（任意路径）放到目标电脑
-2. 双击 `链接跳转.cmd`
-3. Edge 自动打开仪表盘
+## 文件清单
 
-**这个脚本会启动两个本地服务：**
+| 文件 | 作用 | 必须？ |
+|---|---|---|
+| `链接跳转.html` | 主页面（约 2700 行，所有逻辑都在里面） | ✅ |
+| `tailwindcss.js` | 样式库（已下载，410KB） | ✅ |
+| `sortable.min.js` | 拖拽库（已下载，45KB） | ✅ |
+| `链接跳转.cmd` | Windows 一键启动脚本 | 可选 |
+| `state-server.py` | 自动抓图标/抓描述的本地代理 | 可选 |
+| `README-部署说明.md` | 你正在看的 | 参考 |
+| `.gitignore` | Git 排除配置 | 仅 git 用 |
 
-| 端口 | 用途 |
-|---|---|
-| `8765` | 静态文件服务，提供 `链接跳转.html` |
-| `9001` | `state-server.py`，提供**抓图标**、**抓描述**、**状态同步** |
+> **最少要拷 3 个文件**就能离线用：`链接跳转.html` + `tailwindcss.js` + `sortable.min.js`。
 
-**抓图标/抓描述怎么工作的：**
-浏览器里的 JS 调 `http://127.0.0.1:9001/fetch-html?url=...` 或 `/fetch-meta?url=...`。
-`state-server.py` 用 Python 抓目标站点的 HTML 回来（绕过浏览器的 CORS 限制），再正则解析 `<link rel="icon">` / `<meta description>` 等标签。
-**完全本地，不经过任何第三方服务**。
+---
 
-## 验证服务是否正常
+## 数据存在哪里
 
-双击 `.cmd` 后**等 2 秒**，新开一个 cmd 窗口跑：
+所有数据（你添加的卡片、分类、颜色、图标、主题）都存在浏览器的 **localStorage** 里：
 
-```cmd
-curl http://127.0.0.1:9001/health
-```
+- 浏览器关掉再开 → 数据还在
+- 清除浏览器数据 → 数据没了（建议「添加/编辑」前先备份）
+- 换浏览器/换电脑 → 数据**不会**自动跟过去（除非你用同一台电脑同一个浏览器）
 
-应该看到 `{"ok": true}`。
+要备份/迁移：打开浏览器 DevTools (F12) → Application → Local Storage → 复制 `ai-nav-state-v1` 的 value。
 
-如果返回连不上：
-- 看是否有 "端口 9001 已被占用" 的提示
-- 用 `netstat -ano | findstr :9001` 查占用进程 PID，任务管理器里结束它
-- 或者修改 `.cmd` 里 `STATE_PORT=9001` 改个不冲突的端口，**同时修改 HTML 里所有 `http://127.0.0.1:9001` 引用**
+---
 
 ## 常见问题
 
-**Q: 浏览器能打开仪表盘，但点"自动获取图标"提示"未找到图标"。**
-A: state-server 没起来。检查 `curl http://127.0.0.1:9001/health` 是否返回 200。最大可能是端口被占或 Python 没装好。
+**Q: 双击 HTML 打开后是空白的？**
+A: 三个文件必须放**同一个文件夹**。`链接跳转.html` 通过相对路径 `./tailwindcss.js` 和 `./sortable.min.js` 找这两个库。
 
-**Q: 不跑 state-server 能用吗？**
-A: 能。所有功能（查看/编辑/添加/删除/搜索/分类管理/拖拽/主题切换/时钟）都正常。**只**"自动抓图标"和"自动抓描述"两个按钮需要 state-server；不跑时这俩按钮点了没反应，其他不受影响。
+**Q: 浏览器显示乱码？**
+A: 确保文件是 UTF-8 编码。用 VS Code / Notepad++ 打开后另存为 UTF-8 即可。Windows 记事本另存为 "UTF-8"（不是 "UTF-8 BOM"）。
 
-**Q: state-server 起来了，但 502 抓不到某些站。**
-A: 正常。ChatGPT、GitHub 等反爬严格的站会拒绝 Python urllib；JS 渲染站（豆包、Notion）HTML 里没 meta。详见限制清单。
+**Q: 我用的是 Chrome / Firefox，不是 Edge，能用吗？**
+A: 完全可以。浏览器是兼容的。
+- 离线模式：双击 HTML，Chrome/Firefox 默认就用 `file://` 打开
+- 模式二：编辑 `链接跳转.cmd`，把 `start msedge.exe` 改成 `start chrome.exe` 或手动用 Firefox 打开 `http://127.0.0.1:8765/链接跳转.html`
 
-**Q: 防火墙弹出"是否允许 Python 通信"，点允许就行吗？**
-A: 对。127.0.0.1 是本机回环，本来就不出网卡，但 Windows 仍会弹允许提示。
+**Q: 「自动抓图标」点了没反应？**
+A: `state-server.py` 没在跑。要么切到模式二（双击 `链接跳转.cmd`），要么不抓，手动上传图标（点「图标印记 → Choose File」选本地图片）。
 
-**Q: 我可以换 Chrome / Firefox 吗？**
-A: 可以。删掉 `.cmd` 里的 `start msedge.exe` 那行，浏览器手动打开 `http://127.0.0.1:8765/链接跳转.html` 即可。
+**Q: 防火墙弹「是否允许 Python 通信」？**
+A: 点「允许」。`127.0.0.1` 是本机回环，本来就不出网卡，Windows 弹这个只是走个形式。
 
-## 限制清单
+**Q: 端口 9001 被占用了？**
+A: 打开 `链接跳转.cmd`，找到 `STATE_PORT=9001` 改成别的（如 9090）。如果改了端口，**还要同时改 HTML 里所有 `http://127.0.0.1:9001` 引用**（搜 `127.0.0.1:9001` 能找到 3 处）。
 
-- **JS 渲染站抓不到**（豆包、Notion、各种 SPA）：HTML 头里没 meta，要等 JS 跑完才有
-- **反爬严格的站**（ChatGPT、GitHub、Twitter）：服务端会拒绝 Python urllib，返回 502
+**Q: Mac / Linux 能用吗？**
+A: HTML + 离线模式可以。`.cmd` 是 Windows 专用，Mac/Linux 需要写个对应的 shell 脚本（参考 `.cmd` 里的命令）。
+
+---
+
+## 「自动抓」能抓到什么、不能抓什么
+
+能抓到：
+- 普通 HTML 站点（V2EX、阮一峰博客、绝大多数公司官网）
+- 有 `<link rel="icon">` 标签的站
+- 有 `<meta name="description">` 标签的站
+
+抓不到（或抓到的没信息量）：
+- **JS 渲染站**（豆包、Notion、各种 SPA）：HTML 头里没 meta，要等 JS 跑完才有
+- **反爬严格的站**（ChatGPT、GitHub、Twitter）：服务端会拒绝 Python urllib
 - **需要登录的站**：抓不到任何 meta
-- **没有 meta 的简陋站**：会回退到 `<title>`，但 title 经常是"首页 - XX网"这种没信息量的
+- **简陋站**：会回退到 `<title>`，但 title 经常是「首页 - XX网」这种没信息量的
 
-## 想要把状态同步到 Claude 一起协作
+---
 
-state-server 同时提供 `http://127.0.0.1:9001/state`，让 Claude Code 通过 WebFetch 拉取你浏览器的 localStorage 实时数据。
-要开启这个能力，需要在 Claude Code 项目配置里把 `127.0.0.1:9001` 加入 WebFetch 白名单。
+## 数据格式
+
+localStorage 里的 `ai-nav-state-v1` 是 JSON：
+
+```json
+{
+  "categories": [
+    { "id": "cat-chat", "name": "聊天AI", "color": "blue", "icon": "chat_bubble" }
+  ],
+  "cards": [
+    {
+      "id": "c-1",
+      "name": "ChatGPT",
+      "url": "https://chatgpt.com/",
+      "description": "OpenAI 开发的...",
+      "categoryId": "cat-chat",
+      "iconUrl": "https://www.google.com/s2/favicons?domain=chatgpt.com&sz=64"
+    }
+  ],
+  "theme": "light"
+}
+```
+
+你直接编辑这个 JSON 也能批量改（但**先备份**）。
+
+---
+
+## 进阶：和 Claude Code 协作
+
+如果你的 `state-server` 在跑（模式二），它会同时提供 `http://127.0.0.1:9001/state`，让 Claude Code 通过 WebFetch 拉取你浏览器的实时数据 —— 可以让 AI 帮你整理分类、补全描述。
+
+要让 Claude 能访问，需要在 Claude Code 项目配置里把 `127.0.0.1:9001` 加入 WebFetch 白名单。
+
+---
+
+## 许可
+
+随便用。这个项目没 license，你拿去用、改、卖、分发都行。
