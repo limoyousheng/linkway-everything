@@ -1634,7 +1634,7 @@
             const catHex = cat ? getCategoryHex(cat) : (COLOR_RGB[color] || COLOR_RGB.gray);
 
             const iconHtml = card.iconUrl
-                ? `<img src="${escapeHtml(card.iconUrl)}" alt="${escapeHtml(card.name)}" class="w-8 h-8 object-contain" width="32" height="32" onerror="this.outerHTML='<span class=&quot;material-symbols-outlined text-on-primary-container text-2xl&quot; title=&quot;&quot; aria-hidden=&quot;true&quot; style=&quot;font-variation-settings: &apos;FILL&apos; 1;&quot;>${catIcon}</span>'">`
+                ? `<img src="${escapeHtml(card.iconUrl)}" alt="${escapeHtml(card.name)}" class="w-8 h-8 object-contain" width="32" height="32" data-favicon-fallback="${escapeHtml(catIcon)}">`
                 : `<span class="material-symbols-outlined text-on-primary-container text-2xl" title="" aria-hidden="true" style="font-variation-settings: 'FILL' 1;">${catIcon}</span>`;
 
             const wrapper = document.createElement('div');
@@ -1673,6 +1673,14 @@
                     </div>
                 </a>
             `;
+            // 图标加载失败 → 回退到 Material Symbols 文字
+            const iconImg = wrapper.querySelector('img[data-favicon-fallback]');
+            if (iconImg) {
+                const fallbackIcon = iconImg.dataset.faviconFallback;
+                iconImg.addEventListener('error', () => {
+                    iconImg.outerHTML = `<span class="material-symbols-outlined text-on-primary-container text-2xl" title="" aria-hidden="true" style="font-variation-settings: 'FILL' 1;">${fallbackIcon}</span>`;
+                });
+            }
             const menuBtn = wrapper.querySelector('.card-menu-btn');
             menuBtn.addEventListener('click', e => {
                 e.preventDefault();
