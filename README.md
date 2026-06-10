@@ -14,7 +14,8 @@
    state-server.py     ← （可选）自动抓图标/抓描述的本地代理
    tailwindcss.js      ← 样式库（离线用，已本地化）
    sortable.min.js     ← 拖拽库（离线用，已本地化）
-   README-部署说明.md  ← 你正在看的这个文件
+   README.md            ← 你正在看的这个文件
+   LICENSE              ← 个人使用许可证
    .gitignore
    ```
 
@@ -78,7 +79,8 @@
 | `sortable.min.js` | 拖拽库（已下载，45KB） | ✅ |
 | `链接跳转.cmd` | Windows 一键启动脚本 | 可选 |
 | `state-server.py` | 自动抓图标/抓描述的本地代理 | 可选 |
-| `README-部署说明.md` | 你正在看的 | 参考 |
+| `README.md` | 你正在看的 | 参考 |
+| `LICENSE` | 个人使用许可证 | 参考 |
 | `.gitignore` | Git 排除配置 | 仅 git 用 |
 
 > **最少要拷 3 个文件**就能离线用：`链接跳转.html` + `tailwindcss.js` + `sortable.min.js`。
@@ -176,4 +178,8 @@ localStorage 里的 `ai-nav-state-v1` 是 JSON：
 
 ## 许可
 
-随便用。这个项目没 license，你拿去用、改、卖、分发都行。
+本项目仅限**个人非商业使用**。你可以下载、运行、学习、个人修改。
+
+**禁止**：商用、转售、再分发、用于盈利活动。
+
+详细条款见 [LICENSE](./LICENSE)。如需商用授权请联系：1776619796@qq.com
