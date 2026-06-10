@@ -13,6 +13,8 @@ state.json
 
 # Claude Code 本地配置
 .claude/
+CLAUDE.md
+AGENTS.md
 
 # Node / 临时测试
 node_modules/

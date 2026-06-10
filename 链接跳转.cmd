@@ -2,9 +2,9 @@
 setlocal
 
 REM ============================================================
-REM  AI 平台导航 - 一键启动（双击运行）
+REM  链接跳转 - 一键启动（双击运行）
 REM  启动两个本地服务并用 Edge 打开仪表盘：
-REM    1) 8765 : 静态文件服务（提供 AI平台导航.html）
+REM    1) 8765 : 静态文件服务（提供 链接跳转.html）
 REM    2) 9001 : state-server.py（跨域代理 + 状态同步）
 REM  需要：Python 3.8+（自带 pythonw.exe）、Microsoft Edge
 REM ============================================================
@@ -12,7 +12,7 @@ REM ============================================================
 set "ROOT=%~dp0"
 set "PORT=8765"
 set "STATE_PORT=9001"
-set "PAGE=http://127.0.0.1:%PORT%/AI%E5%B9%B3%E5%8F%B0%E5%AF%BC%E8%88%AA.html"
+set "PAGE=http://127.0.0.1:%PORT%/%E9%93%BE%E6%8E%A5%E8%B7%B3%E8%BD%AC.html"
 
 REM ---- 检测 Python 是否可用 ----
 where pythonw >nul 2>nul
