@@ -4,6 +4,9 @@ __pycache__/
 *.pyo
 state.json
 
+# 抓取的图标缓存（state-server.py 自动生成）
+icons/
+
 # 隐私 / 个人文件
 *.xlsx
 

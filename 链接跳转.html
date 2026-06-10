@@ -515,11 +515,12 @@
             overflow: hidden;
         }
         .toast-themed::before {
-            content: 'auto_awesome';
-            font-family: 'Material Symbols Outlined';
-            font-size: 18px;
+            content: '✦';
+            font-family: inherit;
+            font-size: 16px;
             color: var(--toast-c, #a03b56);
-            font-variation-settings: 'FILL' 1;
+            font-weight: 700;
+            line-height: 1;
             animation: toastIconSpin 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .toast-themed::after {
@@ -1408,26 +1409,56 @@
             if (!/^https?:\/\//i.test(normalized)) normalized = 'https://' + normalized;
             try { new URL(normalized); } catch (e) { return null; }
 
+            // 找远程图标 URL（favicon.ico 或 <link rel=icon>）
+            let remoteUrl = null;
             const favIco = joinFaviconIco(normalized);
-            if (favIco && await testImageLoad(favIco)) return favIco;
+            if (favIco && await testImageLoad(favIco)) remoteUrl = favIco;
 
+            if (!remoteUrl) {
+                try {
+                    const proxy = 'http://127.0.0.1:9001/fetch-html?url=' + encodeURIComponent(normalized);
+                    const r = await fetch(proxy, { cache: 'no-store' });
+                    if (!r.ok) return null;
+                    const html = await r.text();
+                    const re = /<link\b[^>]*?>/gi;
+                    let m;
+                    while ((m = re.exec(html)) !== null) {
+                        const tag = m[0];
+                        const rel = (tag.match(/\brel\s*=\s*["']([^"']+)["']/i) || [])[1] || '';
+                        if (!/icon/i.test(rel)) continue;
+                        const href = (tag.match(/\bhref\s*=\s*["']([^"']+)["']/i) || [])[1];
+                        const abs = resolveIconHref(normalized, href);
+                        if (abs && await testImageLoad(abs)) { remoteUrl = abs; break; }
+                    }
+                } catch (e) {}
+            }
+            if (!remoteUrl) return null;
+
+            // 通过 state-server 下载到 ./icons/ 并返回本地 URL；离线也至少能用浏览器缓存或 fallback
+            return await cacheIcon(remoteUrl) || remoteUrl;
+        }
+
+        // 把远程图标 URL 交给 state-server 存到 ./icons/，返回本地 URL（http://127.0.0.1:9001/icons/<hash>.<ext>）。
+        // 若 state-server 不可用，返回 null（让调用方继续用远程 URL）。
+        async function cacheIcon(remoteUrl) {
+            if (!remoteUrl || remoteUrl.startsWith('data:')) return remoteUrl || null;
             try {
-                const proxy = 'http://127.0.0.1:9001/fetch-html?url=' + encodeURIComponent(normalized);
-                const r = await fetch(proxy, { cache: 'no-store' });
+                const r = await fetch('http://127.0.0.1:9001/save-icon?url=' + encodeURIComponent(remoteUrl), { cache: 'no-store' });
                 if (!r.ok) return null;
-                const html = await r.text();
-                const re = /<link\b[^>]*?>/gi;
-                let m;
-                while ((m = re.exec(html)) !== null) {
-                    const tag = m[0];
-                    const rel = (tag.match(/\brel\s*=\s*["']([^"']+)["']/i) || [])[1] || '';
-                    if (!/icon/i.test(rel)) continue;
-                    const href = (tag.match(/\bhref\s*=\s*["']([^"']+)["']/i) || [])[1];
-                    const abs = resolveIconHref(normalized, href);
-                    if (abs && await testImageLoad(abs)) return abs;
-                }
+                const j = await r.json();
+                return j.localUrl || null;
+            } catch (e) { return null; }
+        }
+
+        // 删除 ./icons/ 里的文件（仅当 iconUrl 指向本地时调用）
+        async function deleteLocalIcon(iconUrl) {
+            if (!iconUrl) return;
+            // 只处理本地 icons 路径：http://127.0.0.1:9001/icons/<file>
+            const m = /^http:\/\/127\.0\.0\.1:\d+\/icons\/(.+)$/.exec(iconUrl);
+            if (!m) return;
+            try {
+                await fetch('http://127.0.0.1:9001/delete-icon?filename=' + encodeURIComponent(m[1]), { cache: 'no-store' });
             } catch (e) {}
-            return null;
         }
 
         async function autoFillDescription(siteUrl) {
@@ -2446,6 +2477,9 @@
                     icon: 'delete_forever'
                 });
                 if (!ok) return;
+                // 删除卡片：如果是本地缓存图标（http://127.0.0.1:9001/icons/...），
+                // 同步从 ./icons/ 文件夹删掉对应文件，避免孤儿文件累积
+                deleteLocalIcon(card.iconUrl);
                 state.cards = state.cards.filter(c => c.id !== id);
                 saveState();
                 renderAll();

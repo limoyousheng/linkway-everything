@@ -67,6 +67,7 @@
    - 用 Edge 打开仪表盘
 
 > 抓图标/抓描述的原理：`state-server.py` 用 Python 抓目标站点的 HTML，绕过浏览器的 CORS 限制，从 `<link rel="icon">` 找图标、从 `<meta description>` 找描述。**完全本地运行，不经过任何第三方服务**。
+> 抓到的图标会存到 `icons/` 文件夹（按 URL 哈希命名），下次直接本地读，**断网也能显示已抓过的图标**。删除卡片时本地图标文件也会同步删除。
 
 ---
 
@@ -79,6 +80,7 @@
 | `sortable.min.js` | 拖拽库（已下载，45KB） | ✅ |
 | `链接跳转.cmd` | Windows 一键启动脚本 | 可选 |
 | `state-server.py` | 自动抓图标/抓描述的本地代理 | 可选 |
+| `icons/` | 抓取的图标缓存（自动生成，不用管） | 自动 |
 | `README.md` | 你正在看的 | 参考 |
 | `LICENSE` | 个人使用许可证 | 参考 |
 | `.gitignore` | Git 排除配置 | 仅 git 用 |

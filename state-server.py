@@ -11,16 +11,26 @@
   GET  /fetch-meta?url=<encoded>  - 跨域代理：拉取页面 HTML，提取
                                   meta[name=description] / meta[property=og:description] / title，
                                   按优先级返回首个非空结果（不调用任何 AI）
+  GET  /save-icon?url=<encoded>   - 下载远程图标到 ./icons/<hash>.<ext>，
+                                  返回本地 URL（浏览器下次直接读本地）
+  GET  /icons/<filename>          - 直接从 ./icons/ 目录提供静态文件（带 CORS）
+  DELETE/GET /delete-icon?filename=<encoded> - 删除 ./icons/ 中的指定文件
   GET  /             - 简单说明页
 
 启动：pythonw state-server.py
 """
+import hashlib
 import json
 import re
 import threading
 import urllib.parse
 import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from pathlib import Path
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+ICONS_DIR = SCRIPT_DIR / "icons"
+ICONS_DIR.mkdir(exist_ok=True)
 
 LATEST_STATE = {
     "categories": [],
@@ -140,6 +150,9 @@ class Handler(BaseHTTPRequestHandler):
                     "/health",
                     "/fetch-html?url=<url>",
                     "/fetch-meta?url=<url>",
+                    "/save-icon?url=<url>",
+                    "/icons/<filename>",
+                    "/delete-icon?filename=<file>",
                 ],
                 "note": "POST /state from the browser to update.",
             })
@@ -162,7 +175,72 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(code, {"error": body})
             meta = extract_meta(body)
             return self._json(200, meta)
+        if self.path.startswith("/save-icon"):
+            qs = urllib.parse.parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+            urls = qs.get("url", [])
+            if not urls:
+                return self._json(400, {"error": "missing url param"})
+            try:
+                filename = _save_icon_to_disk(urls[0])
+            except Exception as e:
+                return self._json(502, {"error": f"download failed: {e}", "remoteUrl": urls[0]})
+            local_url = f"http://127.0.0.1:9001/icons/{filename}"
+            return self._json(200, {"localUrl": local_url, "filename": filename, "remoteUrl": urls[0]})
+        if self.path.startswith("/delete-icon"):
+            return self._delete_icon()
+        if self.path.startswith("/icons/"):
+            return self._serve_icon()
         return self._json(404, {"error": "not found"})
+
+    def do_DELETE(self):
+        if self.path.startswith("/delete-icon"):
+            return self._delete_icon()
+        body = b"method not allowed"
+        self.send_response(405)
+        self.send_header("Content-Type", "text/plain; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _serve_icon(self):
+        """从 ICONS_DIR 提供静态图标文件。"""
+        rel = self.path[len("/icons/"):]
+        # 防路径穿越
+        if "/" in rel or "\\" in rel or ".." in rel or not rel:
+            return self._json(404, {"error": "invalid path"})
+        fp = ICONS_DIR / rel
+        if not fp.exists() or not fp.is_file():
+            return self._json(404, {"error": "not found"})
+        ext = fp.suffix.lower()
+        ctype = _ICON_CT.get(ext, "application/octet-stream")
+        try:
+            data = fp.read_bytes()
+        except OSError as e:
+            return self._json(500, {"error": f"read failed: {e}"})
+        self.send_response(200)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Cache-Control", "public, max-age=86400")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def _delete_icon(self):
+        qs = urllib.parse.parse_qs(self.path.split("?", 1)[1] if "?" in self.path else "")
+        names = qs.get("filename", [])
+        if not names:
+            return self._json(400, {"error": "missing filename param"})
+        fname = names[0]
+        if "/" in fname or "\\" in fname or ".." in fname or not fname:
+            return self._json(400, {"error": "invalid filename"})
+        fp = ICONS_DIR / fname
+        if fp.exists() and fp.is_file():
+            try:
+                fp.unlink()
+                return self._json(200, {"deleted": True, "filename": fname})
+            except OSError as e:
+                return self._json(500, {"error": f"delete failed: {e}"})
+        return self._json(200, {"deleted": False, "filename": fname, "reason": "not found"})
 
     def do_POST(self):
         if self.path != "/state":
@@ -195,6 +273,50 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt, *args):
         # 静默：避免控制台刷屏
         pass
+
+
+def _download_icon(remote_url, timeout=10):
+    """下载远程图标二进制，返回 (bytes, ext)。失败抛异常。"""
+    parsed = urllib.parse.urlparse(remote_url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError("only http/https allowed")
+    req = urllib.request.Request(
+        remote_url,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                          "AppleWebKit/537.36 (KHTML, like Gecko) "
+                          "Chrome/124.0 Safari/537.36",
+            "Accept": "image/*,*/*;q=0.8",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        data = resp.read()
+        ctype = (resp.headers.get("Content-Type") or "image/png").split(";")[0].strip().lower()
+    ext_map = {
+        "image/png": "png", "image/jpeg": "jpg", "image/jpg": "jpg",
+        "image/gif": "gif", "image/webp": "webp", "image/svg+xml": "svg",
+        "image/x-icon": "ico", "image/vnd.microsoft.icon": "ico",
+    }
+    ext = ext_map.get(ctype, "png")
+    return data, ext
+
+
+def _save_icon_to_disk(remote_url):
+    """下载图标存到 ICONS_DIR，按 URL 的 md5 前 16 位 + 扩展名命名。
+    返回文件名（如 'abc123.png'）。"""
+    data, ext = _download_icon(remote_url)
+    h = hashlib.md5(remote_url.encode("utf-8")).hexdigest()[:16]
+    filename = f"{h}.{ext}"
+    (ICONS_DIR / filename).write_bytes(data)
+    return filename
+
+
+# 图标文件的 Content-Type 映射（按扩展名）
+_ICON_CT = {
+    ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+    ".gif": "image/gif", ".webp": "image/webp", ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+}
 
 
 if __name__ == "__main__":
