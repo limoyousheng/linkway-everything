@@ -92,17 +92,63 @@ def _title(html):
     return re.sub(r'\s+', ' ', t) if t else None
 
 
+def _extract_jsonld(html):
+    """从 <script type="application/ld+json"> 中按优先级取描述性字段：
+    description > headline > about > name。支持 @graph 嵌套结构和数组形式的 JSON-LD。
+
+    很多站（知乎、CSDN、Medium、Wikipedia 等）在 JSON-LD 里写了比 og:description
+    更准的人工描述，作为 og/meta 都没抓到时的兜底。"""
+    for m in re.finditer(
+        r'<script\b[^>]*\btype\s*=\s*["\']application/ld\+json["\'][^>]*>(.*?)</script>',
+        html, re.IGNORECASE | re.DOTALL,
+    ):
+        raw = m.group(1)
+        # 防 JSON 里夹带 </script> 提前闭合（极少见但遇到过）
+        raw = re.sub(r'</?script[^>]*>', '', raw).strip()
+        if not raw:
+            continue
+        try:
+            data = json.loads(raw)
+        except Exception:
+            continue
+        # 候选 entity 列表：支持 @graph（多个 entity）、顶层对象、顶层数组
+        candidates = []
+        if isinstance(data, dict) and isinstance(data.get('@graph'), list):
+            candidates = [x for x in data['@graph'] if isinstance(x, dict)]
+        elif isinstance(data, dict):
+            candidates = [data]
+        elif isinstance(data, list):
+            candidates = [x for x in data if isinstance(x, dict)]
+        for item in candidates:
+            for key in ('description', 'headline', 'about', 'name'):
+                v = item.get(key)
+                if isinstance(v, str) and v.strip():
+                    return v.strip()
+                # 某些 schema 把 name 写成对象 { @value: "..." }
+                if key == 'name' and isinstance(v, dict):
+                    n = v.get('@value') or v.get('value')
+                    if isinstance(n, str) and n.strip():
+                        return n.strip()
+    return None
+
+
 def extract_meta(html):
-    """按优先级提取页面描述：og:description > description > title。"""
+    """按优先级提取页面描述：og:description > description > JSON-LD > title。"""
     desc = (
         _meta_content(html, 'og:description')
         or _meta_content(html, 'description')
         or _meta_content(html, 'Description')
+        or _extract_jsonld(html)
     )
     title = _title(html)
     source = "none"
     if desc:
-        source = "og:description" if "og:description" in (str(desc) + "") else "meta description"
+        if _meta_content(html, 'og:description'):
+            source = "og:description"
+        elif _meta_content(html, 'description') or _meta_content(html, 'Description'):
+            source = "meta description"
+        elif _extract_jsonld(html):
+            source = "json-ld"
     elif title:
         source = "title"
     return {

@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>资源避难所 - Resource Shelter (Anime Dashboard)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Quicksand:wght@500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Include SortableJS for drag-and-drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "primary": "#a03b56",
+                "inverse-surface": "#2d2f44",
+                "secondary-container": "#5ed8ff",
+                "outline-variant": "#dbc0c4",
+                "on-secondary-fixed-variant": "#004e61",
+                "background": "#fbf8ff",
+                "surface-container-low": "#f4f2ff",
+                "surface-variant": "#e0e0fc",
+                "on-primary-container": "#771b38",
+                "surface-dim": "#d7d8f4",
+                "surface-container": "#edecff",
+                "primary-fixed-dim": "#ffb1c0",
+                "on-tertiary-container": "#5a3800",
+                "surface-container-high": "#e6e6ff",
+                "on-secondary-fixed": "#001f28",
+                "on-primary": "#ffffff",
+                "secondary-fixed": "#b7eaff",
+                "on-tertiary-fixed-variant": "#643f00",
+                "on-tertiary": "#ffffff",
+                "error-container": "#ffdad6",
+                "tertiary": "#845400",
+                "surface-tint": "#a03b56",
+                "surface-container-highest": "#e0e0fc",
+                "on-primary-fixed": "#3f0016",
+                "on-surface": "#181a2e",
+                "on-primary-fixed-variant": "#81233f",
+                "on-error-container": "#93000a",
+                "on-error": "#ffffff",
+                "secondary-fixed-dim": "#5bd5fc",
+                "on-secondary": "#ffffff",
+                "surface": "#fbf8ff",
+                "primary-container": "#ff85a1",
+                "on-surface-variant": "#554245",
+                "inverse-on-surface": "#f1efff",
+                "tertiary-fixed-dim": "#ffb95a",
+                "on-tertiary-fixed": "#2a1800",
+                "primary-fixed": "#ffd9df",
+                "on-background": "#181a2e",
+                "tertiary-container": "#e49c31",
+                "on-secondary-container": "#005c72",
+                "inverse-primary": "#ffb1c0",
+                "outline": "#887175",
+                "surface-container-lowest": "#ffffff",
+                "surface-bright": "#fbf8ff",
+                "tertiary-fixed": "#ffddb6",
+                "error": "#ba1a1a",
+                "secondary": "#006780"
+        },
+        "borderRadius": {
+                "DEFAULT": "1rem",
+                "lg": "2rem",
+                "xl": "3rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "container-padding": "24px",
+                "margin-mobile": "16px",
+                "base": "8px",
+                "margin-desktop": "40px",
+                "gutter": "16px"
+        },
+        "fontFamily": {
+                "headline-lg-mobile": [
+                        "Quicksand"
+                ],
+                "display-lg": [
+                        "Quicksand"
+                ],
+                "label-sm": [
+                        "Space Grotesk"
+                ],
+                "body-md": [
+                        "Plus Jakarta Sans"
+                ],
+                "headline-lg": [
+                        "Quicksand"
+                ],
+                "body-lg": [
+                        "Plus Jakarta Sans"
+                ]
+        },
+        "fontSize": {
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "700"
+                        }
+                ],
+                "display-lg": [
+                        "48px",
+                        {
+                                "lineHeight": "1.1",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "1",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "1.5",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg": [
+                        "32px",
+                        {
+                                "lineHeight": "1.2",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "1.6",
+                                "fontWeight": "400"
+                        }
+                ]
+        },
+        "animation": {
+            'float': 'float 6s ease-in-out infinite',
+            'stagger-fade-in': 'staggerFadeIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+            'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'spin-slow': 'spin 8s linear infinite',
+            'magic-glow': 'magicGlow 2s ease-in-out infinite',
+        },
+        "keyframes": {
+            float: {
+                '0%, 100%': { transform: 'translateY(0)' },
+                '50%': { transform: 'translateY(-12px)' },
+            },
+            staggerFadeIn: {
+                '0%': { opacity: '0', transform: 'translateY(30px)' },
+                '100%': { opacity: '1', transform: 'translateY(0)' },
+            },
+            magicGlow: {
+                '0%, 100%': { boxShadow: '0 0 15px rgba(160, 59, 86, 0.2), inset 0 0 10px rgba(160, 59, 86, 0.1)' },
+                '50%': { boxShadow: '0 0 25px rgba(160, 59, 86, 0.5), inset 0 0 20px rgba(160, 59, 86, 0.2)' },
+            }
+        }
+},
+    },
+  }
+</script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 8px 32px 0 rgba(160, 59, 86, 0.05);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
+            opacity: 0.5;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-8px) scale(1.03);
+            border-color: rgba(255, 255, 255, 0.9);
+        }
+
+        .floating-sidebar {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(32px);
+            -webkit-backdrop-filter: blur(32px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 8px 16px 32px 0 rgba(160, 59, 86, 0.1);
+            border-radius: 2rem;
+            transform-origin: 0 0;
+            transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .floating-sidebar.collapsed {
+            opacity: 0;
+            pointer-events: none;
+            transform: scale(0.1) translateY(-60px);
+        }
+
+        .nav-item-glow:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px 0 rgba(160, 59, 86, 0.1);
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .glass-card-pink:hover { box-shadow: 0 16px 48px 0 rgba(255, 133, 161, 0.4); }
+        .glass-card-blue:hover { box-shadow: 0 16px 48px 0 rgba(94, 216, 255, 0.4); }
+        .glass-card-orange:hover { box-shadow: 0 16px 48px 0 rgba(228, 156, 49, 0.4); }
+        .glass-card-purple:hover { box-shadow: 0 16px 48px 0 rgba(224, 224, 252, 0.6); }
+
+        .stagger-1 { animation-delay: 0.1s; opacity: 0; }
+        .stagger-2 { animation-delay: 0.2s; opacity: 0; }
+        .stagger-3 { animation-delay: 0.3s; opacity: 0; }
+        .stagger-4 { animation-delay: 0.4s; opacity: 0; }
+        .stagger-5 { animation-delay: 0.5s; opacity: 0; }
+        .stagger-6 { animation-delay: 0.6s; opacity: 0; }
+
+        @keyframes icon-bounce {
+            0%, 100% { transform: translateY(0) scale(1.1); }
+            50% { transform: translateY(-4px) scale(1.1); }
+        }
+        
+        @keyframes icon-rotate {
+            0% { transform: rotate(0deg) scale(1.1); }
+            25% { transform: rotate(15deg) scale(1.1); }
+            75% { transform: rotate(-15deg) scale(1.1); }
+            100% { transform: rotate(0deg) scale(1.1); }
+        }
+
+        .glass-card:hover .icon-bounce-hover {
+            animation: icon-bounce 1.2s ease-in-out infinite;
+        }
+        
+        .glass-card:hover .icon-rotate-hover {
+            animation: icon-rotate 1.2s ease-in-out infinite;
+        }
+        
+        .magic-circle-bg {
+            background-image: repeating-radial-gradient(circle at center, transparent 0, transparent 20px, rgba(160, 59, 86, 0.05) 20px, rgba(160, 59, 86, 0.05) 21px),
+                              repeating-conic-gradient(from 0deg, transparent 0deg, transparent 15deg, rgba(160, 59, 86, 0.05) 15deg, rgba(160, 59, 86, 0.05) 16deg);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .glass-card, .nav-item-glow, .floating-sidebar { transition: none; }
+            .glass-card:hover { transform: none; box-shadow: 0 8px 32px 0 rgba(160, 59, 86, 0.05); }
+            .nav-item-glow:hover { transform: none; box-shadow: none; }
+            .animate-float, .animate-stagger-fade-in, .animate-spin-slow, .animate-magic-glow { animation: none !important; opacity: 1; transform: none; }
+            .glass-card:hover .icon-bounce-hover, .glass-card:hover .icon-rotate-hover { animation: none; transform: none; }
+        }
+        
+        body.is-resizing {
+            user-select: none;
+            cursor: col-resize;
+        }
+        
+        body.is-resizing #floating-sidebar {
+            transition: none !important;
+        }
+
+        body.is-dragging * {
+            cursor: grabbing !important;
+        }
+        
+        /* Magic Circle Modal Styles */
+        .incantation-modal {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(40px);
+            border: 2px solid rgba(255, 133, 161, 0.3);
+            border-radius: 50%;
+            width: 600px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 0 50px rgba(255, 133, 161, 0.2), inset 0 0 30px rgba(255, 133, 161, 0.1);
+        }
+        
+        .incantation-modal::before {
+            content: '';
+            position: absolute;
+            inset: -20px;
+            border: 1px dashed rgba(160, 59, 86, 0.4);
+            border-radius: 50%;
+            animation: spin-slow 20s linear infinite;
+            pointer-events: none;
+        }
+        
+        .incantation-modal::after {
+            content: '';
+            position: absolute;
+            inset: 10px;
+            border: 1px solid rgba(160, 59, 86, 0.1);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        .pulse-glow {
+            animation: pulseGlow 2s infinite;
+        }
+        
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(255, 133, 161, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 133, 161, 0); }
+        }
+
+        /* Drag and Drop Styles */
+        .sortable-ghost {
+            opacity: 0.4;
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px dashed var(--tw-colors-primary-500, #a03b56);
+            transform: scale(0.98);
+        }
+
+        /* Enhanced Drag and Drop Visuals */
+        .sortable-drag {
+            opacity: 1 !important;
+            transform: scale(1.08) rotate(3deg) !important;
+            box-shadow: 0 30px 60px -15px rgba(160, 59, 86, 0.5) !important;
+            cursor: grabbing !important;
+            z-index: 9999 !important;
+            pointer-events: none !important;
+            transition: none !important;
+        }
+
+        .sortable-item {
+            cursor: grab;
+            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+        }
+        
+        .sortable-item:active {
+            cursor: grabbing;
+        }
+
+        @keyframes settle-bounce-anim {
+            0% { transform: scale(1.08) rotate(3deg); }
+            40% { transform: scale(0.95) rotate(-1deg); }
+            70% { transform: scale(1.02) rotate(0.5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .settle-bounce {
+            animation: settle-bounce-anim 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+</style>
+</head>
+<body class="bg-background text-on-background min-h-screen relative overflow-x-hidden antialiased bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+<!-- Anime Background Overlay -->
+<div class="fixed inset-0 z-0 pointer-events-none opacity-20 bg-gradient-to-br from-primary-fixed via-transparent to-secondary-fixed">
+</div>
+<!-- Global Toggle Button (Paw Icon) -->
+<div class="fixed top-6 left-6 z-[60] glass-card glass-card-pink rounded-full p-3 inline-flex shadow-[0_0_20px_rgba(255,133,161,0.3)] cursor-pointer hover:scale-110 transition-transform flex-shrink-0 animate-magic-glow" id="sidebar-toggle">
+<span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">
+        pets
+    </span>
+</div>
+<!-- Layout Container -->
+<div class="relative z-10 flex min-h-screen w-full">
+<!-- Floating Resizable Sidebar (Category Management) -->
+<aside class="fixed left-6 top-24 bottom-6 z-50 floating-sidebar flex flex-col" id="floating-sidebar" style="width: 258px;">
+<!-- Resize Handle -->
+<div class="absolute top-0 right-0 w-3 h-full cursor-col-resize hover:bg-primary/20 transition-colors z-50 rounded-r-2xl flex items-center justify-center group" id="resize-handle">
+<div class="h-12 w-1 bg-primary/30 rounded-full group-hover:bg-primary/60"></div>
+</div>
+<!-- Logo & Brand -->
+<div class="p-6 pb-4 flex items-center border-b border-primary/10 whitespace-nowrap">
+<span class="sidebar-text font-headline-lg-mobile text-xl text-primary font-bold tracking-wide transition-all duration-300 opacity-100 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+    分类档案
+</span>
+</div>
+<!-- Navigation Links (Categories) -->
+<nav class="flex-1 px-4 py-6 flex flex-col gap-3 overflow-x-hidden overflow-y-auto w-full magic-circle-bg rounded-b-2xl">
+<!-- Non-sortable top item -->
+<div>
+<a class="flex items-center px-4 py-3 rounded-2xl text-on-surface hover:text-primary transition-all nav-item-glow group bg-white/50 shadow-sm border border-primary/20 whitespace-nowrap" href="#">
+<span class="material-symbols-outlined text-primary flex-shrink-0" style="font-variation-settings: 'FILL' 1;">language</span>
+<span class="sidebar-text font-body-md font-medium transition-all duration-300 ml-4 opacity-100">Global Feed (全局)</span>
+</a>
+</div>
+<div class="flex items-center justify-between pl-4 pt-2 pb-1 mt-2 border-t border-primary/10 pt-4">
+<div class="text-xs font-label-sm text-outline uppercase tracking-wider">系统分类</div>
+<button class="text-primary hover:bg-primary/10 rounded-full p-1 mr-2 transition-colors" title="添加新分类">
+<span class="material-symbols-outlined text-sm">add</span>
+</button>
+</div>
+<!-- Sortable Categories Container -->
+<div class="flex flex-col gap-3" id="sortable-categories">
+<a class="sortable-item flex items-center px-4 py-3 rounded-2xl text-on-surface-variant hover:text-tertiary transition-all nav-item-glow group whitespace-nowrap" draggable="false" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-tertiary transition-colors flex-shrink-0" style="font-variation-settings: 'FILL' 1;">brush</span>
+<span class="sidebar-text font-body-md font-medium transition-all duration-300 ml-4 opacity-100">视觉结界 (设计)</span>
+</a><a class="sortable-item flex items-center px-4 py-3 rounded-2xl text-on-surface-variant hover:text-secondary transition-all nav-item-glow group whitespace-nowrap" draggable="false" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary transition-colors flex-shrink-0" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="sidebar-text font-body-md font-medium transition-all duration-300 ml-4 opacity-100">物资储备 (工具)</span>
+</a><a class="sortable-item flex items-center px-4 py-3 rounded-2xl text-on-surface-variant hover:text-primary transition-all nav-item-glow group whitespace-nowrap" draggable="false" href="#">
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors flex-shrink-0" style="font-variation-settings: 'FILL' 1;">explore</span>
+<span class="sidebar-text font-body-md font-medium transition-all duration-300 ml-4 opacity-100">区域地图 (参考)</span>
+</a>
+</div>
+<button class="flex items-center px-4 py-3 rounded-2xl text-primary hover:bg-primary/10 transition-all nav-item-glow group border border-dashed border-primary/40 mt-4 whitespace-nowrap" id="create-category-btn">
+<span class="material-symbols-outlined text-primary flex-shrink-0">add</span>
+<span class="sidebar-text font-body-md font-bold transition-all duration-300 ml-4 opacity-100">创建分类</span>
+</button></nav>
+</aside>
+<!-- Main Content Area (Website Management) -->
+<main class="transition-all duration-300 ease-in-out flex-1 w-full flex flex-col pt-16 px-8 md:px-margin-desktop pb-20 max-w-[1400px]" id="main-content" style="padding-left: 318px;">
+<!-- Header Section -->
+<header class="w-full flex flex-col md:flex-row md:items-end justify-between mb-12 animate-stagger-fade-in stagger-1 pl-12 md:pl-0 gap-6">
+<div>
+<h1 class="font-display-lg text-display-lg text-primary mb-3 drop-shadow-sm flex items-center gap-4">
+<span class="material-symbols-outlined text-5xl animate-spin-slow">star</span>
+        Global Feed
+    </h1>
+<p class="font-body-md text-body-md text-on-surface-variant max-w-xl bg-white/50 px-4 py-2 rounded-lg border border-primary/10">
+                        欢迎回来，守护者。当前视图：所有已刻印的维度链接。长按卡片或分类以重新排列。
+    </p>
+</div>
+<button class="py-3 px-6 rounded-xl bg-primary text-white hover:bg-primary-fixed-variant transition-all duration-300 flex items-center justify-center group whitespace-nowrap shadow-lg hover:shadow-[0_0_20px_rgba(160,59,86,0.4)]" id="open-modal-btn">
+<span class="material-symbols-outlined text-xl group-hover:rotate-180 transition-transform duration-500 flex-shrink-0">magic_button</span>
+<span class="font-body-md font-bold transition-all duration-300 ml-2">刻印新站点</span>
+</button>
+</header>
+<!-- Navigation Grid (Global Feed) -->
+<div class="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8" id="sortable-grid">
+<!-- Card 1 -->
+<!-- Card 2 -->
+<!-- Card 3 -->
+<div class="sortable-item relative h-full" draggable="false">
+<a class="glass-card glass-card-blue rounded-[2rem] p-8 flex flex-col gap-4 group animate-stagger-fade-in stagger-3 animate-float h-full block" draggable="false" href="#" style="animation-duration: 5.8s;">
+<div class="flex items-start justify-between">
+<div class="w-14 h-14 rounded-2xl bg-secondary-container flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 icon-bounce-hover shadow-inner">
+<span class="material-symbols-outlined text-on-secondary-container text-2xl" style="font-variation-settings: 'FILL' 1;">
+                code
+            </span>
+</div>
+<span class="text-xs font-label-sm text-secondary bg-secondary/10 px-3 py-1 rounded-full">工具</span>
+</div>
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2 group-hover:text-secondary transition-colors">代码炼金炉</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80 line-clamp-2">前端工程师的神秘代码片段与快捷工具集合。</p>
+</div>
+<div class="mt-auto pt-4 border-t border-primary/10 text-xs text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">link</span> alchemy-code.io
+    </div>
+</a>
+</div><div class="sortable-item relative h-full" draggable="false">
+<a class="glass-card glass-card-pink rounded-[2rem] p-8 flex flex-col gap-4 group animate-stagger-fade-in stagger-2 animate-float h-full block" draggable="false" href="#" style="animation-duration: 6.2s;">
+<div class="flex items-start justify-between">
+<div class="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 icon-bounce-hover shadow-inner">
+<span class="material-symbols-outlined text-on-primary-container text-2xl" style="font-variation-settings: 'FILL' 1;">
+                design_services
+            </span>
+</div>
+<span class="text-xs font-label-sm text-primary bg-primary/10 px-3 py-1 rounded-full">设计</span>
+</div>
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2 group-hover:text-primary transition-colors">UI 神器库</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80 line-clamp-2">汇集各维度的界面组件与灵感源泉，定期更新。</p>
+</div>
+<div class="mt-auto pt-4 border-t border-primary/10 text-xs text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">link</span> ui-magic.net
+    </div>
+</a>
+</div><div class="sortable-item relative h-full">
+<a class="glass-card glass-card-orange rounded-[2rem] p-8 flex flex-col gap-4 group animate-stagger-fade-in stagger-4 animate-float h-full block" href="#" style="animation-duration: 6.5s;">
+<div class="flex items-start justify-between">
+<div class="w-14 h-14 rounded-2xl bg-tertiary-container flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300 icon-bounce-hover shadow-inner">
+<span class="material-symbols-outlined text-on-tertiary-container text-2xl" style="font-variation-settings: 'FILL' 1;">
+                auto_stories
+            </span>
+</div>
+<span class="text-xs font-label-sm text-tertiary bg-tertiary/10 px-3 py-1 rounded-full">参考</span>
+</div>
+<div>
+<h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-2 group-hover:text-tertiary transition-colors">古籍文档</h2>
+<p class="font-body-md text-body-md text-on-surface-variant opacity-80 line-clamp-2">包含各种框架与库的官方魔法卷轴。</p>
+</div>
+<div class="mt-auto pt-4 border-t border-primary/10 text-xs text-outline flex items-center gap-1">
+<span class="material-symbols-outlined text-sm">link</span> ancient-docs.org
+    </div>
+</a>
+</div>
+</div>
+</main>
+</div>
+<!-- Magic Incantation Modal (Hidden by default) -->
+<div class="fixed inset-0 z-[100] items-center justify-center flex hidden" id="incantation-modal-wrapper">
+<!-- Blur Backdrop -->
+<div class="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm transition-opacity" id="modal-backdrop"></div>
+<!-- Modal Content -->
+<div class="incantation-modal z-10 p-12 relative animate-stagger-fade-in">
+<!-- Close Button -->
+<button class="absolute top-8 right-8 text-outline hover:text-primary transition-colors focus:outline-none bg-white/50 rounded-full p-2 hover:bg-white" id="close-modal-btn">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="text-center mb-6">
+<span class="material-symbols-outlined text-primary text-4xl mb-2 animate-bounce">auto_awesome</span>
+<h2 class="font-headline-lg text-primary">刻印新站点</h2>
+<p class="font-label-sm text-outline mt-1 tracking-widest">INCANTATION CIRCLE</p>
+</div>
+<div class="w-full max-w-sm flex flex-col gap-5">
+<!-- URL Input & Magic Fetch -->
+<div class="flex flex-col gap-2 relative">
+<label class="font-label-sm text-on-surface-variant" for="magic-url">维度坐标 (URL)</label>
+<div class="relative flex items-center">
+<span class="absolute left-3 text-primary/60 material-symbols-outlined">link</span>
+<input class="w-full bg-white/70 border-2 border-primary/20 rounded-xl py-3 pl-10 pr-24 text-on-surface font-body-md focus:border-primary focus:ring-0 focus:bg-white transition-all shadow-inner placeholder:text-outline/50" id="magic-url" placeholder="https://..." type="url"/>
+<button class="absolute right-2 bg-primary/10 text-primary hover:bg-primary hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center gap-1" id="magic-fetch-btn">
+<span class="material-symbols-outlined text-sm">search</span> 检索
+                    </button>
+</div>
+</div>
+<!-- Fetched Data Preview -->
+<div class="bg-white/60 p-4 rounded-xl border border-primary/20 relative overflow-hidden group">
+<!-- Decorative magic lines -->
+<div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 rounded-bl-full"></div>
+<div class="absolute bottom-0 left-0 w-12 h-12 bg-secondary/5 rounded-tr-full"></div>
+<div class="flex flex-col gap-3 relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface flex items-center justify-center border border-primary/10 text-primary">
+<span class="material-symbols-outlined" id="preview-icon">language</span>
+</div>
+<input class="flex-1 bg-transparent border-b border-primary/30 px-0 py-1 text-on-surface font-body-md focus:border-primary focus:ring-0 focus:outline-none transition-colors placeholder:text-outline/40 font-bold" id="preview-name" placeholder="站点真名" type="text"/>
+</div>
+<textarea class="w-full bg-transparent border border-primary/10 rounded-lg px-3 py-2 text-on-surface-variant font-body-md text-sm focus:border-primary focus:ring-0 focus:outline-none transition-colors resize-none placeholder:text-outline/40 bg-white/50" id="preview-desc" placeholder="站点描述与魔力特性..." rows="2"></textarea>
+</div>
+</div>
+<!-- Category -->
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-on-surface-variant" for="magic-category">归属领域</label>
+<div class="relative">
+<select class="w-full bg-white/70 border-2 border-primary/20 rounded-xl py-3 px-4 text-on-surface font-body-md focus:border-primary focus:ring-0 focus:bg-white transition-all appearance-none cursor-pointer">
+<option disabled="" selected="" value="">选择领域...</option>
+<option value="tools">物资储备 (工具)</option>
+<option value="design">视觉结界 (设计)</option>
+<option value="ref">区域地图 (参考)</option>
+</select>
+<span class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-primary material-symbols-outlined">expand_more</span>
+</div>
+</div>
+<!-- Action -->
+<button class="mx-auto w-16 h-16 rounded-full flex items-center justify-center hover:bg-primary-fixed-variant hover:shadow-[0_0_20px_rgba(160,59,86,0.6)] transition-all group shadow-lg mt-4 bg-white/60 backdrop-blur-sm border border-white/50 text-primary hover:bg-white/80" title="完成刻印">
+<span class="material-symbols-outlined text-3xl group-hover:rotate-180 transition-transform duration-500">save</span>
+</button>
+</div>
+</div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        const sidebar = document.getElementById('floating-sidebar');
+        const mainContent = document.getElementById('main-content');
+        const resizeHandle = document.getElementById('resize-handle');
+        
+        // Modal elements
+        const modalWrapper = document.getElementById('incantation-modal-wrapper');
+        const openModalBtn = document.getElementById('open-modal-btn');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const magicFetchBtn = document.getElementById('magic-fetch-btn');
+        const magicUrlInput = document.getElementById('magic-url');
+        const previewName = document.getElementById('preview-name');
+        const previewIcon = document.getElementById('preview-icon');
+        const previewDesc = document.getElementById('preview-desc');
+        
+        let isCollapsed = true;
+        let sidebarWidth = 260;
+        const MIN_WIDTH = 220;
+        const MAX_WIDTH = 400;
+
+        // Toggle logic
+        toggleBtn.addEventListener('click', () => {
+            isCollapsed = !isCollapsed;
+            if (isCollapsed) {
+                sidebar.classList.add('collapsed');
+                mainContent.style.paddingLeft = '80px'; // Space for paw icon + padding
+            } else {
+                sidebar.classList.remove('collapsed');
+                mainContent.style.paddingLeft = `${sidebarWidth + 60}px`; // sidebar width + left offset + gap
+            }
+        });
+
+        // Resize logic
+        let isResizing = false;
+        let startX;
+        let startWidth;
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            if (isCollapsed) return;
+            isResizing = true;
+            startX = e.clientX;
+            startWidth = sidebarWidth;
+            document.body.classList.add('is-resizing');
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            
+            const dx = e.clientX - startX;
+            let newWidth = startWidth + dx;
+            
+            if (newWidth < MIN_WIDTH) newWidth = MIN_WIDTH;
+            if (newWidth > MAX_WIDTH) newWidth = MAX_WIDTH;
+            
+            sidebarWidth = newWidth;
+            sidebar.style.width = `${sidebarWidth}px`;
+            mainContent.style.paddingLeft = `${sidebarWidth + 60}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isResizing) {
+                isResizing = false;
+                document.body.classList.remove('is-resizing');
+            }
+        });
+
+        // Modal Logic
+        function openModal() {
+            modalWrapper.classList.remove('hidden');
+            modalWrapper.classList.add('flex');
+            // Reset fields
+            magicUrlInput.value = '';
+            previewName.value = '';
+            previewDesc.value = '';
+            previewIcon.textContent = 'language';
+        }
+
+        function closeModal() {
+            modalWrapper.classList.add('hidden');
+            modalWrapper.classList.remove('flex');
+        }
+
+        openModalBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        modalBackdrop.addEventListener('click', closeModal);
+
+        // Auto-Fetch Mockup
+        magicFetchBtn.addEventListener('click', () => {
+            const url = magicUrlInput.value;
+            if (!url) return;
+
+            // Animate button
+            magicFetchBtn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">sync</span> 解析中';
+            magicUrlInput.classList.add('pulse-glow');
+            
+            setTimeout(() => {
+                magicFetchBtn.innerHTML = '<span class="material-symbols-outlined text-sm">check</span> 已获取';
+                magicUrlInput.classList.remove('pulse-glow');
+                
+                try {
+                    const urlObj = new URL(url.startsWith('http') ? url : 'https://' + url);
+                    const domain = urlObj.hostname.replace('www.', '');
+                    const titleName = domain.charAt(0).toUpperCase() + domain.slice(1).split('.')[0];
+                    
+                    previewName.value = `${titleName} 维度`;
+                    previewDesc.value = `从 ${domain} 提取的未知能量源。`;
+                    
+                    // Simple icon logic based on domain length for variety
+                    const icons = ['public', 'terminal', 'palette', 'menu_book', 'science'];
+                    previewIcon.textContent = icons[domain.length % icons.length];
+                    
+                    previewName.classList.add('text-primary');
+                    setTimeout(() => previewName.classList.remove('text-primary'), 1000);
+                } catch(e) {
+                    previewName.value = "未知领域";
+                    previewDesc.value = "无法解析该维度的魔力特征。";
+                }
+
+                setTimeout(() => {
+                    magicFetchBtn.innerHTML = '<span class="material-symbols-outlined text-sm">search</span> 检索';
+                }, 2000);
+
+            }, 1200);
+        });
+
+        // Initialize SortableJS for Sidebar Categories
+        const sortableCategories = document.getElementById('sortable-categories');
+        if (sortableCategories) {
+            new Sortable(sortableCategories, {
+                animation: 250,
+                delay: 75, // 75ms long press to trigger
+                delayOnTouchOnly: false, // Apply delay to mouse as well
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                forceFallback: true, // Force fallback to apply custom styles consistently
+                fallbackClass: 'sortable-drag',
+                easing: "cubic-bezier(1, 0, 0, 1)",
+                onChoose: function (evt) {
+                    evt.item.style.transform = 'scale(0.98)';
+                },
+                onStart: function (evt) {
+                    document.body.classList.add('is-dragging');
+                },
+                onEnd: function (evt) {
+                    document.body.classList.remove('is-dragging');
+                    evt.item.style.transform = '';
+                    evt.item.classList.remove('settle-bounce');
+                    void evt.item.offsetWidth;
+                    evt.item.classList.add('settle-bounce');
+                    setTimeout(() => evt.item.classList.remove('settle-bounce'), 500);
+                },
+                onUnchoose: function(evt) {
+                    evt.item.style.transform = '';
+                }
+            });
+        }
+
+        // Initialize SortableJS for Main Grid Cards
+        const sortableGrid = document.getElementById('sortable-grid');
+        if (sortableGrid) {
+            new Sortable(sortableGrid, {
+                animation: 300,
+                delay: 75, // 75ms long press to trigger
+                delayOnTouchOnly: false,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                forceFallback: true,
+                fallbackClass: 'sortable-drag',
+                easing: "cubic-bezier(0.175, 0.885, 0.32, 1.275)", // Bouncy easing matching flysheep aesthetic
+                onChoose: function (evt) {
+                    evt.item.style.transform = 'scale(0.98)';
+                },
+                onStart: function (evt) {
+                    document.body.classList.add('is-dragging');
+                    // Disable float animation during drag to prevent jitter
+                    const card = evt.item.querySelector('.glass-card');
+                    if (card) {
+                        card.style.animationName = 'none';
+                    }
+                },
+                onEnd: function (evt) {
+                    document.body.classList.remove('is-dragging');
+                    // Re-enable float animation
+                    const card = evt.item.querySelector('.glass-card');
+                    if (card) {
+                        card.style.animationName = '';
+                    }
+                    evt.item.style.transform = '';
+                    evt.item.classList.remove('settle-bounce');
+                    void evt.item.offsetWidth;
+                    evt.item.classList.add('settle-bounce');
+                    setTimeout(() => evt.item.classList.remove('settle-bounce'), 500);
+                },
+                onUnchoose: function(evt) {
+                    evt.item.style.transform = '';
+                }
+            });
+        }
+    });
+</script>
+<!-- Add Category Modal -->
+<div class="fixed inset-0 z-[100] items-center justify-center hidden" id="category-modal-wrapper">
+<div class="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm transition-opacity" id="category-modal-backdrop"></div>
+<div class="incantation-modal z-10 p-12 relative animate-stagger-fade-in">
+<button class="absolute top-8 right-8 text-outline hover:text-primary transition-colors focus:outline-none bg-white/50 rounded-full p-2 hover:bg-white" id="close-category-modal">
+<span class="material-symbols-outlined">close</span>
+</button>
+<div class="text-center mb-6">
+<span class="material-symbols-outlined text-primary text-4xl mb-2 animate-bounce">folder_open</span>
+<h2 class="font-headline-lg text-primary">创建新领域</h2>
+<p class="font-label-sm text-outline mt-1 tracking-widest">NEW CATEGORY ARCHIVE</p>
+</div>
+<div class="w-full max-w-sm flex flex-col gap-5">
+<div class="flex flex-col gap-2">
+<label class="font-label-sm text-on-surface-variant" for="category-name-input">分类真名</label>
+<input class="w-full bg-white/70 border-2 border-primary/20 rounded-xl py-3 px-4 text-on-surface font-body-md focus:border-primary focus:ring-0 focus:bg-white transition-all shadow-inner placeholder:text-outline/50" id="category-name-input" placeholder="输入分类名称..." type="text"/>
+</div>
+<div class="flex gap-4 mt-4">
+<button class="flex-1 py-3 rounded-xl border-2 border-primary/20 text-on-surface-variant font-bold hover:bg-white transition-colors" id="cancel-category-btn">取消</button>
+<button class="flex-1 py-3 rounded-xl bg-primary text-white font-bold hover:bg-primary-fixed-variant shadow-lg transition-all" id="confirm-category-btn">确认刻印</button>
+</div>
+</div>
+</div>
+</div><script class="">
+(function() {
+    const createBtn = document.getElementById('create-category-btn');
+    const modal = document.getElementById('category-modal-wrapper');
+    const closeBtn = document.getElementById('close-category-modal');
+    const cancelBtn = document.getElementById('cancel-category-btn');
+    const confirmBtn = document.getElementById('confirm-category-btn');
+    const backdrop = document.getElementById('category-modal-backdrop');
+    const input = document.getElementById('category-name-input');
+    const sortableCategoriesContainer = document.getElementById('sortable-categories');
+
+    function openModal() {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        input.value = '';
+        input.focus();
+    }
+
+    function closeModal() {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    createBtn.addEventListener('click', openModal);
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+
+    confirmBtn.addEventListener('click', () => {
+        const name = input.value.trim();
+        if (!name) return;
+
+        const newLink = document.createElement('a');
+        newLink.href = '#';
+        newLink.className = 'sortable-item flex items-center px-4 py-3 rounded-2xl text-on-surface-variant hover:text-primary transition-all nav-item-glow group whitespace-nowrap';
+        newLink.innerHTML = `
+            <span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors flex-shrink-0" style="font-variation-settings: 'FILL' 1;">folder</span>
+            <span class="sidebar-text font-body-md font-medium transition-all duration-300 ml-4 opacity-100">${name}</span>
+        `;
+        
+        // Append to the sortable container
+        sortableCategoriesContainer.appendChild(newLink);
+        closeModal();
+    });
+})();
+</script>
+</body></html>

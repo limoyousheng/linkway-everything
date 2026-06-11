@@ -34,3 +34,10 @@ Thumbs.db
 # 编辑器
 .vscode/
 .idea/
+
+# 备份（手动 cp 出来的 .bak 副本，不入仓）
+*.bak
+*.backup
+
+# Playwright MCP 测试产物
+.playwright-mcp/
