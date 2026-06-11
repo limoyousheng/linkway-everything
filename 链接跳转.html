@@ -3464,6 +3464,35 @@
             mobSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
             mobSearchInput.focus();
         });
+
+        // ===== 跨断点 resize 重建 =====
+        // 协调 Task 1 的简单 resize 监听（仅同步 dataset.layout）：
+        //   - Task 1 监听器先触发（顶层 1712 行，早绑定）
+        //   - 本监听器后触发，带 200ms 节流 + 跨断点 destroy+renderAll 重建
+        // 不跨断点时只调 applyMobileLayoutClass（dataset.layout 不变）
+        let resizeTimer;
+        function setupResizeHandler() {
+            window.addEventListener('resize', () => {
+                clearTimeout(resizeTimer);
+                resizeTimer = setTimeout(() => {
+                    const wasMobile = document.documentElement.dataset.layout === 'mobile';
+                    applyMobileLayoutClass();
+                    const isMobileNow = isMobile();
+                    if (wasMobile !== isMobileNow) {
+                        // 跨断点：销毁所有 SortableJS 实例、renderAll 重建
+                        const grid = document.getElementById('card-grid');
+                        if (grid?.__sortable) grid.__sortable.destroy();
+                        const sidebar = document.getElementById('floating-sidebar');
+                        if (sidebar?.__sortable) sidebar.__sortable.destroy();
+                        const catGrid = document.getElementById('mobile-category-grid');
+                        if (catGrid?.__sortable) catGrid.__sortable.destroy();
+                        renderAll();
+                    }
+                }, 200);
+            });
+        }
+
+        setupResizeHandler();
     });
     </script>
     <!-- 手机底部导航（lg 以下显示） -->
