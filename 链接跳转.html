@@ -2205,6 +2205,16 @@
             updateMobileBackBtn();
             if (isMobile()) {
                 rebindCardSortableMobile();
+                renderMobileCategoryGrid();
+                const catGrid = document.getElementById('mobile-category-grid');
+                const cardGrid = document.getElementById('card-grid');
+                if (state.view === 'categories' && !state.currentCategoryId) {
+                    catGrid.style.display = 'grid';
+                    cardGrid.style.display = 'none';
+                } else {
+                    catGrid.style.display = 'none';
+                    cardGrid.style.display = 'flex';
+                }
             } else {
                 rebindCardSortable();
             }
@@ -3235,6 +3245,60 @@
             });
         }
 
+        function renderMobileCategoryGrid() {
+            const grid = document.getElementById('mobile-category-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+            state.categories.forEach(cat => {
+                const count = state.cards.filter(c => c.categoryId === cat.id).length;
+                const cm = COLOR_MAP[cat.color] || COLOR_MAP.gray;
+                const card = document.createElement('button');
+                card.type = 'button';
+                card.className = 'mob-cat-tile glass-card glass-card-' + cat.color + ' rounded-2xl p-4 flex flex-col items-start gap-2 active:scale-95 transition text-left';
+                card.dataset.catId = cat.id;
+                const catIcon = cat.icon || cm.icon;
+                const catHex = getCategoryHex(cat);
+                card.innerHTML = `
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: ${hexToRgba(catHex, 0.25)};">
+                        <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">${catIcon}</span>
+                    </div>
+                    <div class="text-sm font-headline font-semibold text-on-surface truncate w-full">${escapeHtml(cat.name)}</div>
+                    <div class="text-xs text-on-surface-variant/70">${count} 个站点</div>
+                `;
+                card.addEventListener('click', () => {
+                    state.currentCategoryId = cat.id;
+                    renderAll();
+                });
+                grid.appendChild(card);
+            });
+
+            // SortableJS 让手机分类网格接收卡片
+            if (typeof Sortable !== 'undefined') {
+                if (grid.__sortable) grid.__sortable.destroy();
+                grid.__sortable = Sortable.create(grid, {
+                    group: { name: 'mobile', pull: false, put: true },
+                    animation: 250,
+                    delay: 75,
+                    delayOnTouchOnly: false,
+                    ghostClass: 'sortable-ghost',
+                    dragClass: 'sortable-drag',
+                    forceFallback: true,
+                    fallbackClass: 'sortable-drag',
+                    onAdd: (evt) => {
+                        const cardId = evt.item.dataset.cardId;
+                        const newCatId = evt.to.dataset.catId;
+                        const card = state.cards.find(c => c.id === cardId);
+                        if (card) {
+                            card.categoryId = newCatId;
+                            saveState();
+                            renderAll();
+                            showToast('已移动分类');
+                        }
+                    }
+                });
+            }
+        }
+
         function rebindSidebarSortable() {
             const list = document.getElementById('sidebar-categories');
             if (!list) return;
@@ -3431,6 +3495,9 @@
             </button>
         </div>
     </div>
+
+    <!-- 移动端分类网格（view=categories & 无 currentCategoryId 时显示） -->
+    <div id="mobile-category-grid" class="mob-only grid grid-cols-2 gap-3 px-4 pt-2" style="display: none;"></div>
 
     <!-- 移动端底部 Sheet 容器（showBottomSheet 渲染到这里） -->
     <div id="mobile-sheet-root" class="mob-only hidden"></div>
