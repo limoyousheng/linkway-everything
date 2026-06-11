@@ -10,7 +10,8 @@
     <script src="./tailwindcss.js"></script>
     <!-- Material Symbols Outlined + 字体 -->
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Quicksand:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap" rel="stylesheet"/>
+    <link rel="preload" href="./material-symbols-outlined.woff2" as="font" type="font/woff2" crossorigin>
+    <link href="./material-symbols-outlined.css" rel="stylesheet"/>
     <!-- SortableJS (拖拽) -->
     <script src="./sortable.min.js"></script>
     <script>
@@ -1514,7 +1515,13 @@
                 if (!raw) return null;
                 const parsed = JSON.parse(raw);
                 if (!parsed.categories || !Array.isArray(parsed.cards)) return null;
-                return parsed;
+                return {
+                    categories: parsed.categories,
+                    cards: parsed.cards,
+                    theme: parsed.theme || 'light',
+                    view: parsed.view || 'hub',
+                    currentCategoryId: parsed.currentCategoryId || null
+                };
             } catch (e) { return null; }
         }
 
@@ -1551,10 +1558,14 @@
             state = {
                 categories: JSON.parse(JSON.stringify(DEFAULT_CATEGORIES)),
                 cards: JSON.parse(JSON.stringify(DEFAULT_CARDS)),
-                theme: 'light'
+                theme: 'light',
+                view: 'hub',
+                currentCategoryId: null
             };
         }
         if (!state.theme) state.theme = 'light';
+        if (!state.view) state.view = 'hub';
+        if (state.currentCategoryId === undefined) state.currentCategoryId = null;
         syncStateToServer(state);
 
         (async function autofillIcons() {
@@ -1598,6 +1609,15 @@
         function extractDomain(url) {
             try { return new URL(url).hostname.replace('www.', ''); } catch (e) { return url || ''; }
         }
+        function isMobile() {
+            return window.innerWidth < 1024;
+        }
+        function applyMobileLayoutClass() {
+            document.documentElement.dataset.layout = isMobile() ? 'mobile' : 'desktop';
+        }
+        window.addEventListener('resize', () => {
+            applyMobileLayoutClass();
+        });
         function getCategory(id) { return state.categories.find(c => c.id === id); }
         function getCategoryColor(id) { const c = getCategory(id); return c ? c.color : 'gray'; }
         function categoryExists(id) { return state.categories.some(c => c.id === id); }
@@ -2216,15 +2236,38 @@
             document.getElementById('site-url').classList.add('pulse-glow');
             try {
                 const iconUrl = await fetchFavicon(siteUrl);
+                const currentSrc = pendingIconDataUrl || pendingIconUrl;
+                const hasCurrent = !!currentSrc;
                 if (iconUrl) {
-                    document.getElementById('site-icon-url').value = iconUrl;
-                    pendingIconUrl = iconUrl;
-                    pendingIconDataUrl = null;
-                    document.getElementById('site-icon-file').value = '';
-                    updateIconPreview();
-                    showToast('已自动获取图标');
+                    if (hasCurrent) {
+                        const host = (() => { try { return new URL(siteUrl).hostname.replace(/^www\./, ''); } catch { return siteUrl; } })();
+                        const ok = await showConfirm({
+                            title: '是否替换当前图标？',
+                            message: '已为「' + host + '」检索到新图标，上方预览即为新图标。\n\n确定要用它替换当前图标吗？',
+                            okText: '替换',
+                            cancelText: '保留原图标',
+                            imageUrl: iconUrl
+                        });
+                        if (!ok) {
+                            showToast('已保留原图标');
+                            return;
+                        }
+                        document.getElementById('site-icon-url').value = iconUrl;
+                        pendingIconUrl = iconUrl;
+                        pendingIconDataUrl = null;
+                        document.getElementById('site-icon-file').value = '';
+                        updateIconPreview();
+                        showToast('已替换为新图标');
+                    } else {
+                        document.getElementById('site-icon-url').value = iconUrl;
+                        pendingIconUrl = iconUrl;
+                        pendingIconDataUrl = null;
+                        document.getElementById('site-icon-file').value = '';
+                        updateIconPreview();
+                        showToast('已自动获取图标');
+                    }
                 } else {
-                    showToast('未找到图标，请手动填写或上传');
+                    showToast(hasCurrent ? '未找到新图标' : '未找到图标');
                 }
             } catch (e) {
                 showToast('抓取失败：' + (e && e.message ? e.message : '未知错误'));
@@ -2427,13 +2470,21 @@
         const confirmOkBtn = document.getElementById('confirm-ok');
         const confirmCancelBtn = document.getElementById('confirm-cancel');
 
-        function showConfirm({ title = '确认操作', message = '', okText = '确定', cancelText = '取消', danger = false, icon = 'help' } = {}) {
+        function showConfirm({ title = '确认操作', message = '', okText = '确定', cancelText = '取消', danger = false, icon = 'help', imageUrl = null } = {}) {
             return new Promise(resolve => {
                 confirmTitle.textContent = title;
                 confirmMessage.textContent = message;
                 confirmOkBtn.textContent = okText;
                 confirmCancelBtn.textContent = cancelText;
-                confirmIcon.textContent = icon;
+                const iconEl = document.getElementById('confirm-icon');
+                if (imageUrl) {
+                    iconEl.outerHTML = '<img id="confirm-icon" class="w-16 h-16 object-contain rounded-xl bg-white/40 p-1 ring-2 ring-primary/30 shadow-sm" alt="预览">';
+                    const img = document.getElementById('confirm-icon');
+                    img.src = imageUrl;
+                    img.onerror = () => { img.outerHTML = '<span id="confirm-icon" class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: \'FILL\' 1;">image</span>'; };
+                } else {
+                    iconEl.outerHTML = '<span id="confirm-icon" class="material-symbols-outlined text-primary text-5xl" style="font-variation-settings: \'FILL\' 1;">' + icon + '</span>';
+                }
                 if (danger) {
                     confirmOkBtn.style.background = '#ba1a1a';
                     confirmOkBtn.style.boxShadow = '0 4px 12px rgba(186, 26, 26, 0.3)';
@@ -2779,6 +2830,7 @@
         // ============================================
         // 初始化
         // ============================================
+        applyMobileLayoutClass();
         renderAll();
         applyTheme(state.theme);
         syncSidebarSortableForState();
