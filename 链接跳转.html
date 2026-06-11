@@ -1040,6 +1040,17 @@
         -webkit-user-select: none;
         user-select: none;
     }
+    #add-site-modal.mob-sheet-mode,
+    #categories-modal.mob-sheet-mode {
+        align-items: flex-end !important;
+    }
+    #add-site-modal.mob-sheet-mode > div,
+    #categories-modal.mob-sheet-mode > div {
+        border-radius: 1.5rem 1.5rem 0 0 !important;
+        max-width: 100% !important;
+        max-height: 92vh !important;
+        width: 100% !important;
+    }
 }
 
 /* 桌面端：隐藏手机专属元素 */
@@ -2368,6 +2379,21 @@
         }
 
         function openCardModal(mode, cardId) {
+            if (isMobile()) {
+                const modal = document.getElementById('add-site-modal');
+                if (modal) {
+                    modal.classList.add('mob-sheet-mode');
+                    requestAnimationFrame(() => {
+                        modal.style.position = 'fixed';
+                        modal.style.top = 'auto';
+                        modal.style.bottom = '0';
+                        modal.style.left = '0';
+                        modal.style.right = '0';
+                        modal.style.maxHeight = '92vh';
+                        modal.style.borderRadius = '1.5rem 1.5rem 0 0';
+                    });
+                }
+            }
             editingCardId = cardId;
             const title = document.getElementById('card-form-title');
             const submit = document.getElementById('card-form-submit');
