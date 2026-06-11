@@ -1751,11 +1751,59 @@
         }
 
         function buildCardElement(card, index) {
+            const mobile = isMobile();
             const color = getCategoryColor(card.categoryId);
             const cm = COLOR_MAP[color] || COLOR_MAP.gray;
             const cat = getCategory(card.categoryId);
             const catName = cat ? cat.name : '其他';
             const domain = extractDomain(card.url);
+
+            const wrapper = document.createElement('div');
+            if (mobile) {
+                // ===== 手机单行布局 =====
+                const catIcon = cat ? (cat.icon || (COLOR_MAP[cat.color] || COLOR_MAP.gray).icon) : cm.icon;
+                const catHex = cat ? getCategoryHex(cat) : (COLOR_RGB[color] || COLOR_RGB.gray);
+                wrapper.className = 'mob-card glass-card glass-card-' + color + ' rounded-2xl p-4 flex flex-row gap-3 items-center relative cursor-pointer';
+                wrapper.style.animation = `staggerFadeIn 0.4s ease-out ${Math.min(index, 8) * 30}ms both`;
+                wrapper.dataset.cardId = card.id;
+                wrapper.dataset.categoryId = card.categoryId;
+                wrapper.innerHTML = `
+                    <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0" style="background: ${hexToRgba(catHex, 0.2)};">
+                        ${card.iconUrl ? `<img src="${escapeHtml(card.iconUrl)}" alt="" class="w-9 h-9 object-contain rounded-md" data-favicon-fallback="${escapeHtml(catIcon)}" />` : `<span class="material-symbols-outlined text-2xl text-${color}-700" style="font-variation-settings: 'FILL' 1;">${catIcon}</span>`}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-base font-headline font-semibold text-on-surface truncate">${escapeHtml(card.name || domain)}</div>
+                        <div class="text-xs text-on-surface-variant/70 truncate">${escapeHtml(domain)}${card.description ? ' · ' + escapeHtml(card.description.slice(0, 30)) : ''}</div>
+                    </div>
+                    <button class="mob-card-menu-btn w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high active:scale-95 shrink-0" aria-label="操作" type="button">
+                        <span class="material-symbols-outlined text-xl">more_vert</span>
+                    </button>
+                `;
+                // 图标加载失败 → 回退到 Material Symbols 文字
+                const iconImg = wrapper.querySelector('img[data-favicon-fallback]');
+                if (iconImg) {
+                    const fallbackIcon = iconImg.dataset.faviconFallback;
+                    iconImg.addEventListener('error', () => {
+                        iconImg.outerHTML = `<span class="material-symbols-outlined text-2xl text-${color}-700" style="font-variation-settings: 'FILL' 1;">${fallbackIcon}</span>`;
+                    });
+                }
+                const menuBtn = wrapper.querySelector('.mob-card-menu-btn');
+                if (menuBtn) {
+                    menuBtn.addEventListener('click', e => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        openActionSheet(card.id);
+                    });
+                    menuBtn.addEventListener('mousedown', e => e.stopPropagation());
+                    menuBtn.addEventListener('touchstart', e => e.stopPropagation(), { passive: true });
+                }
+                wrapper.addEventListener('click', e => {
+                    if (e.target.closest('.mob-card-menu-btn')) return;
+                    if (card.url) window.open(card.url, '_blank', 'noopener');
+                });
+                return wrapper;
+            }
+            // ===== 桌面方块布局（保持现有逻辑完全不变）=====
             const staggerClass = `stagger-${Math.min(index + 1, 6)}`;
             const catIcon = cat ? (cat.icon || (COLOR_MAP[cat.color] || COLOR_MAP.gray).icon) : cm.icon;
             const isCustom = cat && cat.customColor;
@@ -1765,7 +1813,6 @@
                 ? `<img src="${escapeHtml(card.iconUrl)}" alt="${escapeHtml(card.name)}" class="w-8 h-8 object-contain" width="32" height="32" data-favicon-fallback="${escapeHtml(catIcon)}">`
                 : `<span class="material-symbols-outlined text-on-primary-container text-2xl" title="" aria-hidden="true" style="font-variation-settings: 'FILL' 1;">${catIcon}</span>`;
 
-            const wrapper = document.createElement('div');
             wrapper.className = `sortable-item relative h-full`;
             wrapper.dataset.cardId = card.id;
             wrapper.dataset.categoryId = card.categoryId;
