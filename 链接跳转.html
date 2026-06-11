@@ -2993,6 +2993,56 @@
 
         updateMobileTabUI();
         updateMobileBackBtn();
+
+        // ===== 移动端搜索 Spotlight =====
+        function openMobileSearch() {
+            if (!isMobile()) return;
+            const overlay = document.getElementById('mobile-search-overlay');
+            overlay.classList.remove('hidden');
+            setTimeout(() => document.getElementById('mobile-search-input')?.focus(), 50);
+        }
+
+        function closeMobileSearch() {
+            const overlay = document.getElementById('mobile-search-overlay');
+            if (overlay) overlay.classList.add('hidden');
+            const input = document.getElementById('mobile-search-input');
+            if (input) input.value = '';
+            document.getElementById('mobile-search-clear')?.classList.add('hidden');
+            // 触发桌面 searchTerm 同步
+            const deskInput = document.getElementById('search-input');
+            if (deskInput) {
+                deskInput.value = '';
+                deskInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            renderCards();
+        }
+
+        document.getElementById('mobile-search-btn')?.addEventListener('click', () => {
+            const overlay = document.getElementById('mobile-search-overlay');
+            if (overlay.classList.contains('hidden')) openMobileSearch();
+            else closeMobileSearch();
+        });
+
+        const mobSearchInput = document.getElementById('mobile-search-input');
+        mobSearchInput?.addEventListener('input', (e) => {
+            const v = e.target.value;
+            const clearBtn = document.getElementById('mobile-search-clear');
+            if (v) clearBtn.classList.remove('hidden');
+            else clearBtn.classList.add('hidden');
+            // 同步到桌面搜索（如果存在）
+            const deskInput = document.getElementById('search-input');
+            if (deskInput) {
+                deskInput.value = v;
+                deskInput.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            renderCards();
+        });
+
+        document.getElementById('mobile-search-clear')?.addEventListener('click', () => {
+            mobSearchInput.value = '';
+            mobSearchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            mobSearchInput.focus();
+        });
     });
     </script>
     <!-- 手机底部导航（lg 以下显示） -->
