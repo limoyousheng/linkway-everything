@@ -1013,6 +1013,65 @@
         html.dark .cat-icon-pick { color: #ffb1c0; }
         html.dark .cat-icon-pick:hover { background: rgba(255, 133, 161, 0.15); border-color: rgba(255, 133, 161, 0.3); }
         html.dark .cat-icon-pick.is-current { background: rgba(255, 133, 161, 0.2); border-color: #ffb1c0; color: #ffb1c0; }
+
+        /* ===== 移动端（≤ 1023.98px） ===== */
+:root {
+    --mob-topbar-h: 56px;
+    --mob-bottomnav-h: 64px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --sheet-z: 50;
+    --nav-z: 40;
+    --toast-z: 60;
+}
+
+/* 移动端全局：去掉 iOS 点击高亮 + 禁用桌面 hover 动画 */
+@media (max-width: 1023.98px) {
+    body {
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: contain;
+    }
+    .glass-card {
+        animation: none !important;
+    }
+    .mob-card,
+    .mob-card * {
+        touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+    }
+}
+
+/* 桌面端：隐藏手机专属元素（手机端 DOM 一直存在，仅 CSS 隐藏） */
+@media (min-width: 1024px) {
+    #mobile-topbar,
+    #mobile-bottom-nav,
+    #mobile-sheet-root,
+    #mobile-search-overlay {
+        display: none !important;
+    }
+    .mob-only { display: none !important; }
+}
+
+/* 移动端：隐藏桌面专属元素 */
+@media (max-width: 1023.98px) {
+    #floating-sidebar,
+    #desktop-topbar,
+    .desk-only {
+        display: none !important;
+    }
+}
+
+/* prefers-reduced-motion：关掉所有手机端动画 */
+@media (prefers-reduced-motion: reduce) {
+    .mob-card,
+    .mob-sheet,
+    .mob-tab-indicator,
+    .animate-stagger-fade-in {
+        animation: none !important;
+        transition: none !important;
+    }
+}
     </style>
 </head>
 <body class="bg-background text-on-background min-h-screen antialiased">
