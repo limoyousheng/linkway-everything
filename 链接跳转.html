@@ -2135,6 +2135,67 @@
             renderCategorySelect();
             updateActiveCategory();
             updatePageHeader();
+            updateMobileTabUI();
+            updateMobileBackBtn();
+        }
+
+        // ============================================
+        // 手机端外壳：tab 切换 / 主题/添加/返回 事件
+        // ============================================
+        function switchMobileView(view) {
+            state.view = view;
+            if (view === 'hub' || view === 'archive') {
+                state.currentCategoryId = null;
+            }
+            renderAll();
+            updateMobileTabUI();
+            if (isMobile()) scrollToTop();
+        }
+
+        function updateMobileTabUI() {
+            const tabs = document.querySelectorAll('#mobile-bottom-nav .mob-tab');
+            tabs.forEach(tab => {
+                const v = tab.dataset.tab;
+                const isActive = v === state.view;
+                const indicator = tab.querySelector('.mob-tab-indicator');
+                const icon = tab.querySelector('.mob-tab-icon');
+                const label = tab.querySelector('.mob-tab-label');
+                if (isActive) {
+                    indicator.classList.remove('bg-transparent');
+                    indicator.classList.add('bg-primary');
+                    icon.style.fontVariationSettings = "'FILL' 1";
+                    label.classList.add('text-primary', 'font-semibold');
+                    label.classList.remove('text-on-surface-variant');
+                } else {
+                    indicator.classList.add('bg-transparent');
+                    indicator.classList.remove('bg-primary');
+                    icon.style.fontVariationSettings = "'FILL' 0";
+                    label.classList.remove('text-primary', 'font-semibold');
+                    label.classList.add('text-on-surface-variant');
+                }
+            });
+        }
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: isMobile() ? 'smooth' : 'auto' });
+        }
+
+        function updateMobileBackBtn() {
+            const btn = document.getElementById('mobile-back-btn');
+            if (!btn) return;
+            if (isMobile() && state.view === 'categories' && state.currentCategoryId) {
+                btn.classList.remove('hidden');
+                btn.classList.add('flex');
+            } else {
+                btn.classList.add('hidden');
+                btn.classList.remove('flex');
+            }
+        }
+
+        function toggleTheme() {
+            state.theme = state.theme === 'dark' ? 'light' : 'dark';
+            saveState();
+            applyTheme(state.theme);
         }
 
         // ============================================
@@ -2154,11 +2215,7 @@
             }
         }
 
-        document.getElementById('theme-toggle').addEventListener('click', () => {
-            state.theme = state.theme === 'dark' ? 'light' : 'dark';
-            saveState();
-            applyTheme(state.theme);
-        });
+        document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
         // ============================================
         // 浮动侧边栏：折叠 / 展开 / 拖拽改宽
@@ -2911,6 +2968,31 @@
         applyTheme(state.theme);
         syncSidebarSortableForState();
         rebindCardSortable();
+
+        // ===== 手机端外壳事件绑定 =====
+        document.querySelectorAll('#mobile-bottom-nav .mob-tab').forEach(tab => {
+            tab.addEventListener('click', () => switchMobileView(tab.dataset.tab));
+        });
+
+        document.getElementById('mobile-theme-btn')?.addEventListener('click', () => {
+            toggleTheme();
+            const icon = document.querySelector('#mobile-theme-btn .material-symbols-outlined');
+            if (icon) icon.textContent = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+        });
+
+        document.getElementById('mobile-add-btn')?.addEventListener('click', () => {
+            if (isMobile()) openCardModal('add', null);
+            else openCardModal('add', null);
+        });
+
+        document.getElementById('mobile-back-btn')?.addEventListener('click', () => {
+            state.currentCategoryId = null;
+            renderAll();
+            updateMobileBackBtn();
+        });
+
+        updateMobileTabUI();
+        updateMobileBackBtn();
     });
     </script>
     <!-- 手机底部导航（lg 以下显示） -->
