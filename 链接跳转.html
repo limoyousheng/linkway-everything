@@ -2913,5 +2913,23 @@
         rebindCardSortable();
     });
     </script>
+    <!-- 手机底部导航（lg 以下显示） -->
+    <nav id="mobile-bottom-nav" class="mob-only fixed bottom-0 inset-x-0 z-40 h-16 backdrop-blur-xl bg-surface-container/80 border-t border-outline-variant/30 grid grid-cols-3" style="padding-bottom: var(--safe-bottom); height: calc(var(--mob-bottomnav-h) + var(--safe-bottom));">
+        <button type="button" data-tab="hub" class="mob-tab flex flex-col items-center justify-center gap-1 text-on-surface-variant active:scale-95 transition relative">
+            <span class="mob-tab-indicator absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-primary transition-all"></span>
+            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">home</span>
+            <span class="text-label-sm mob-tab-label">枢纽</span>
+        </button>
+        <button type="button" data-tab="categories" class="mob-tab flex flex-col items-center justify-center gap-1 text-on-surface-variant active:scale-95 transition relative">
+            <span class="mob-tab-indicator absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-transparent transition-all"></span>
+            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">apps</span>
+            <span class="text-label-sm mob-tab-label">分类</span>
+        </button>
+        <button type="button" data-tab="archive" class="mob-tab flex flex-col items-center justify-center gap-1 text-on-surface-variant active:scale-95 transition relative">
+            <span class="mob-tab-indicator absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-transparent transition-all"></span>
+            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
+            <span class="text-label-sm mob-tab-label">档案</span>
+        </button>
+    </nav>
 </body>
 </html>
