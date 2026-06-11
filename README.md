@@ -173,14 +173,6 @@ localStorage 里的 `ai-nav-state-v1` 是 JSON：
 
 ---
 
-## 进阶：和 Claude Code 协作
-
-如果你的 `state-server` 在跑（模式二），它会同时提供 `http://127.0.0.1:9001/state`，让 Claude Code 通过 WebFetch 拉取你浏览器的实时数据 —— 可以让 AI 帮你整理分类、补全描述。
-
-要让 Claude 能访问，需要在 Claude Code 项目配置里把 `127.0.0.1:9001` 加入 WebFetch 白名单。
-
----
-
 ## 许可
 
 本项目仅限**个人非商业使用**。你可以下载、运行、学习、个人修改。
