@@ -2203,6 +2203,11 @@
             updatePageHeader();
             updateMobileTabUI();
             updateMobileBackBtn();
+            if (isMobile()) {
+                rebindCardSortableMobile();
+            } else {
+                rebindCardSortable();
+            }
         }
 
         // ============================================
@@ -3196,6 +3201,38 @@
                 console.warn('SortableJS 不可用，卡片拖拽已禁用:', e);
                 cardSortable = null;
             }
+        }
+
+        function rebindCardSortableMobile() {
+            const grid = document.getElementById('card-grid');
+            if (!grid || typeof Sortable === 'undefined') return;
+            if (grid.__sortable) grid.__sortable.destroy();
+            grid.__sortable = Sortable.create(grid, {
+                group: { name: 'mobile', pull: true, put: false },
+                animation: 250,
+                delay: 75,
+                delayOnTouchOnly: false,
+                ghostClass: 'sortable-ghost',
+                dragClass: 'sortable-drag',
+                forceFallback: true,
+                fallbackClass: 'sortable-drag',
+                easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                onStart: () => document.body.classList.add('is-dragging'),
+                onEnd: (evt) => {
+                    document.body.classList.remove('is-dragging');
+                    if (evt.from === evt.to && evt.oldIndex !== evt.newIndex) {
+                        const newOrderIds = Array.from(evt.to.children)
+                            .filter(el => el.classList.contains('sortable-item') || el.classList.contains('mob-card'))
+                            .map(el => el.dataset.cardId);
+                        const reordered = newOrderIds.map(id => state.cards.find(c => c.id === id)).filter(Boolean);
+                        const others = state.cards.filter(c => !newOrderIds.includes(c.id));
+                        state.cards = [...reordered, ...others];
+                        saveState();
+                    }
+                    evt.item.classList.add('settle-bounce');
+                    setTimeout(() => evt.item.classList.remove('settle-bounce'), 500);
+                }
+            });
         }
 
         function rebindSidebarSortable() {
