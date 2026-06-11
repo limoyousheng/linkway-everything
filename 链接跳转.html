@@ -3056,6 +3056,15 @@
                     toast.style.setProperty('--toast-c-rgba40', `rgba(${r},${g},${b},0.4)`);
                 }
             }
+            // 移动端 toast 落到 bottom-nav 之上（64px + 16px 间距 + iOS safe area）
+            // 桌面端保持顶部 80px（远离顶部栏 + 阴影不挡卡片）
+            if (isMobile()) {
+                toast.style.top = 'auto';
+                toast.style.bottom = 'calc(80px + var(--safe-bottom))';
+            } else {
+                toast.style.top = '80px';
+                toast.style.bottom = 'auto';
+            }
             document.body.appendChild(toast);
             setTimeout(() => {
                 toast.style.opacity = '0';
