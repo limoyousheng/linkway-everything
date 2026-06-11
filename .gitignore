@@ -14,6 +14,12 @@ icons/
 *.png
 !favicon.png
 
+# 参考设计 / 调试产物（不参与发布）
+第二代导航平台.html
+stitch_sleek_flow_navigation/
+verify/
+docs/
+
 # Claude Code 本地配置
 .claude/
 CLAUDE.md
