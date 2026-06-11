@@ -2813,6 +2813,28 @@
         const confirmCancelBtn = document.getElementById('confirm-cancel');
 
         function showConfirm({ title = '确认操作', message = '', okText = '确定', cancelText = '取消', danger = false, icon = 'help', imageUrl = null } = {}) {
+            if (isMobile()) {
+                return new Promise(resolve => {
+                    const content = document.createElement('div');
+                    content.innerHTML = `
+                <div class="flex flex-col items-center text-center pt-2 pb-4 px-2">
+                    ${imageUrl
+                        ? `<img src="${escapeHtml(imageUrl)}" class="w-20 h-20 object-contain rounded-2xl bg-white/40 p-1 ring-2 ring-primary/30 shadow-sm mb-4" alt="预览" onerror="this.outerHTML='<span class=&quot;material-symbols-outlined text-primary text-5xl&quot; style=&quot;font-variation-settings: FILL 1;&quot;>${icon}</span>'" />`
+                        : `<span class="material-symbols-outlined text-primary text-5xl mb-4" style="font-variation-settings: 'FILL' 1;">${icon}</span>`
+                    }
+                    <h3 class="text-lg font-headline font-semibold text-on-surface mb-2">${escapeHtml(title)}</h3>
+                    <p class="text-sm text-on-surface-variant whitespace-pre-line">${escapeHtml(message)}</p>
+                </div>
+                <div class="flex flex-col gap-2 pt-2">
+                    <button data-ok class="h-12 rounded-2xl font-semibold text-base ${danger ? 'bg-error text-on-error' : 'bg-primary text-on-primary'} active:scale-95 transition">${escapeHtml(okText)}</button>
+                    <button data-cancel class="h-12 rounded-2xl font-semibold text-base bg-surface-container-high text-on-surface-variant active:scale-95 transition">${escapeHtml(cancelText)}</button>
+                </div>
+            `;
+                    const { dismiss } = showBottomSheet({ content, height: 'auto' });
+                    content.querySelector('[data-ok]').addEventListener('click', () => { dismiss(); resolve(true); });
+                    content.querySelector('[data-cancel]').addEventListener('click', () => { dismiss(); resolve(false); });
+                });
+            }
             return new Promise(resolve => {
                 confirmTitle.textContent = title;
                 confirmMessage.textContent = message;
