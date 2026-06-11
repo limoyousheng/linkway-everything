@@ -1075,6 +1075,23 @@
     </style>
 </head>
 <body class="bg-background text-on-background min-h-screen antialiased">
+    <!-- 手机顶部栏（lg 以下显示，桌面隐藏） -->
+    <header id="mobile-topbar" class="mob-only fixed top-0 inset-x-0 z-40 h-14 backdrop-blur-xl bg-surface-container/80 border-b border-outline-variant/30 flex items-center px-3 gap-2" style="padding-top: var(--safe-top); height: calc(var(--mob-topbar-h) + var(--safe-top));">
+        <button id="mobile-back-btn" type="button" aria-label="返回" class="hidden w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition" title="返回">
+            <span class="material-symbols-outlined text-2xl">arrow_back</span>
+        </button>
+        <button id="mobile-add-btn" type="button" aria-label="添加站点" class="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary/10 active:scale-95 transition" title="添加站点">
+            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+        </button>
+        <h1 id="mobile-title" class="flex-1 text-center text-base font-headline font-semibold text-on-surface truncate">枢纽</h1>
+        <button id="mobile-theme-btn" type="button" aria-label="切换主题" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition" title="切换主题">
+            <span class="material-symbols-outlined text-2xl">dark_mode</span>
+        </button>
+        <button id="mobile-search-btn" type="button" aria-label="搜索" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition" title="搜索">
+            <span class="material-symbols-outlined text-2xl">search</span>
+        </button>
+    </header>
+
     <!-- 全局背景层 -->
     <div class="fixed inset-0 z-0 page-bg pointer-events-none" aria-hidden="true"></div>
     <div class="fixed inset-0 z-0 page-bg-overlay pointer-events-none" aria-hidden="true"></div>
