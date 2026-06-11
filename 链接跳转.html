@@ -92,13 +92,13 @@
                         "gutter": "16px"
                     },
                     fontFamily: {
-                        "headline-lg-mobile": ["Quicksand","sans-serif"],
-                        "display-lg": ["Quicksand","sans-serif"],
-                        "label-sm": ["Space Grotesk","sans-serif"],
-                        "body-md": ["Plus Jakarta Sans","sans-serif"],
-                        "headline-lg": ["Quicksand","sans-serif"],
-                        "body-lg": ["Plus Jakarta Sans","sans-serif"],
-                        "sans": ["Plus Jakarta Sans","system-ui","sans-serif"],
+                        "headline-lg-mobile": ["Quicksand","Ma Shan Zheng","sans-serif"],
+                        "display-lg": ["Quicksand","Ma Shan Zheng","sans-serif"],
+                        "label-sm": ["Space Grotesk","Ma Shan Zheng","sans-serif"],
+                        "body-md": ["Plus Jakarta Sans","Ma Shan Zheng","sans-serif"],
+                        "headline-lg": ["Quicksand","Ma Shan Zheng","sans-serif"],
+                        "body-lg": ["Plus Jakarta Sans","Ma Shan Zheng","sans-serif"],
+                        "sans": ["Plus Jakarta Sans","Ma Shan Zheng","system-ui","sans-serif"],
                         "clock": ["Ma Shan Zheng","ZCOOL XiaoWei","STKaiti","KaiTi","serif"]
                     },
                     animation: {
@@ -177,12 +177,27 @@
             -webkit-user-select: none;
             -moz-user-select: none;
             -ms-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
         }
         input, textarea, [contenteditable="true"] {
             user-select: text;
             -webkit-user-select: text;
             -moz-user-select: text;
             -ms-user-select: text;
+            -webkit-touch-callout: default;
+        }
+        /* 卡片/图标/按钮：禁止长按弹图片预览/选中菜单（包括 iOS callout） */
+        .mob-card, .mob-card *,
+        .glass-card, .glass-card *,
+        #mobile-bottom-nav, #mobile-bottom-nav *,
+        #mobile-topbar, #mobile-topbar *,
+        button, button *, a, a *, img {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
         html.dark body { background: #181a2e; color: #e6e6ff; }
 
@@ -470,6 +485,27 @@
             to   { opacity: 1; transform: translateY(-50%) translateX(0) scale(1); }
         }
         body.is-dragging * { cursor: grabbing !important; }
+        /* 拖动期间 + 拖动后 1s 冷却期：全局禁止选中文字 / 图标 / 长按 callout，
+           避免拖卡片时手指经过其它元素被选中蓝框或弹 iOS 图片预览 */
+        body.is-dragging, body.has-recent-drag,
+        body.is-dragging *, body.has-recent-drag * {
+            -webkit-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+            -webkit-touch-callout: none !important;
+            -webkit-user-drag: none !important;
+            -webkit-tap-highlight-color: transparent !important;
+        }
+        /* 拖动期间 + 拖动后 1s 冷却期：隐藏卡片右上角三个点菜单，
+           避免 click 误触弹设置菜单 / 视觉干扰 */
+        body.is-dragging .mob-card-menu-btn,
+        body.is-dragging .card-menu-btn,
+        body.has-recent-drag .mob-card-menu-btn,
+        body.has-recent-drag .card-menu-btn {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
         body.is-resizing { user-select: none; cursor: col-resize; }
         body.is-resizing #floating-sidebar { transition: none !important; }
 
@@ -1017,12 +1053,16 @@
         /* ===== 移动端（≤ 1023.98px） ===== */
 :root {
     --mob-topbar-h: 56px;
-    --mob-bottomnav-h: 64px;
+    --mob-bottomnav-h: 86px;
     --safe-top: env(safe-area-inset-top, 0px);
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     --sheet-z: 50;
     --nav-z: 40;
     --toast-z: 60;
+}
+/* 手机端 main 给底栏留出空间，避免最后一张卡被遮 */
+#main-content {
+    padding-bottom: calc(var(--mob-bottomnav-h, 86px) + 12px) !important;
 }
 
 /* 移动端全局：去掉 iOS 点击高亮 + 禁用桌面 hover 动画 */
@@ -1030,15 +1070,69 @@
     body {
         -webkit-tap-highlight-color: transparent;
         overscroll-behavior-y: contain;
+        background: linear-gradient(-45deg, #fbf8ff, #ffd9df40, #b7eaff40, #fbf8ff);
+        background-size: 400% 400%;
+        background-attachment: fixed;
+        animation: bgShift 15s ease-in-out infinite;
+    }
+    html.dark body {
+        background: linear-gradient(-45deg, #0a0c1a, #140e1a, #0a1420, #0a0c1a);
+        background-size: 400% 400%;
+        background-attachment: fixed;
+    }
+    @keyframes bgShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
     }
     .glass-card {
         animation: none !important;
     }
-    .mob-card,
-    .mob-card * {
-        touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
+    /* 但 mob-card 内部需要 float 动画（参考设计的卡片缓慢浮动效果） */
+    .mob-card {
+        animation: var(--mob-anim, none) !important;
+    }
+    /* 移动端卡片：让触摸穿透 img / icon / 高光层 → 落到卡片本身，由 SortableJS 接管长按拖拽。
+       否则 iOS 长按图标会弹"保存图片/选中"菜单，Android 长按文字会蓝框选中。
+       只有右上角的菜单按钮需要 pointer-events: auto。 */
+    .mob-card {
+        touch-action: manipulation;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        -webkit-user-drag: none !important;
+    }
+    .mob-card *,
+    .mob-card *::before,
+    .mob-card *::after {
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
+        -webkit-user-drag: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+    }
+    /* 即使浏览器顽固选中（华为/小米浏览器有时不响应 selectstart），
+       也用 ::selection 透明让选区不可见 */
+    .mob-card ::selection,
+    .mob-card::selection {
+        background: transparent !important;
+        color: inherit !important;
+    }
+    .mob-card img,
+    .mob-card .mob-glass-highlight,
+    .mob-card .material-symbols-outlined,
+    .mob-card h3,
+    .mob-card p,
+    .mob-card div:not(.mob-card-menu-btn) {
+        pointer-events: none;
+    }
+    .mob-card .mob-card-menu-btn,
+    .mob-card .mob-card-menu-btn * {
+        pointer-events: auto;
     }
     #add-site-modal.mob-sheet-mode,
     #categories-modal.mob-sheet-mode {
@@ -1057,6 +1151,158 @@
         height: 100% !important;
         max-width: 100% !important;
         max-height: 100% !important;
+    }
+
+    /* ==== 移动端深色模式覆盖 ==== */
+    /* 整体原则：背景更暗（降低「画面亮度」）、文字更白（提升「文字亮度」）*/
+    html.dark #mobile-topbar {
+        background: rgba(6, 8, 16, 0.95) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        color: #ffffff;
+    }
+    html.dark #mobile-topbar .material-symbols-outlined { color: #ffffff; }
+    html.dark #mobile-bottom-nav {
+        background: rgba(6, 8, 16, 0.95) !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.75);
+    }
+    html.dark #mobile-bottom-nav .mob-tab .material-symbols-outlined { color: rgba(255, 255, 255, 0.7); }
+    html.dark #mobile-bottom-nav .mob-tab[data-tab="hub"] .material-symbols-outlined,
+    html.dark #mobile-bottom-nav .mob-tab.is-active .material-symbols-outlined { color: #ffb1c0; }
+    /* popover */
+    html.dark .mob-cat-popover {
+        background: rgba(10, 12, 22, 0.97) !important;
+        box-shadow: 0 12px 48px rgba(0, 0, 0, 0.8);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    html.dark .mob-cat-popover-arrow { background: rgba(10, 12, 22, 0.97) !important; }
+    /* 卡片背景彻底压暗 */
+    html.dark .mob-card,
+    html.dark .glass-card {
+        background: rgba(10, 12, 22, 0.93) !important;
+        border-color: rgba(255, 255, 255, 0.05) !important;
+        box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.5) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        backdrop-filter: blur(20px) !important;
+    }
+    html.dark .mob-glass-highlight {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%) !important;
+    }
+    /* container 圆圈更深，图标文字用纯白 */
+    html.dark .bg-primary-container   { background-color: #2d101e !important; }
+    html.dark .bg-secondary-container { background-color: #001a24 !important; }
+    html.dark .bg-tertiary-container  { background-color: #1a1200 !important; }
+    html.dark .bg-surface-variant     { background-color: #181a30 !important; }
+    html.dark .text-on-primary-container   { color: #ffffff !important; }
+    html.dark .text-on-secondary-container { color: #ffffff !important; }
+    html.dark .text-on-tertiary-container  { color: #ffffff !important; }
+    html.dark .text-on-surface-variant     { color: #e8e4fa !important; }
+    /* 全局主文字用纯白 */
+    html.dark .text-on-surface { color: #ffffff !important; }
+    /* 卡片描述文字也提亮（全局 .glass-card 有更具体的规则，需同级覆盖） */
+    html.dark .glass-card .text-on-surface-variant { color: #f0edff !important; }
+    /* 强调色保持亮度 */
+    html.dark .text-primary   { color: #ffb1c0 !important; }
+    html.dark .text-secondary { color: #5ed8ff !important; }
+    html.dark .text-tertiary  { color: #ffb95a !important; }
+
+    /* 移动端玻璃卡片高光 */
+    .mob-glass-highlight {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        opacity: 0.5;
+        background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 100%);
+        border-radius: 1rem 1rem 0 0;
+        pointer-events: none;
+    }
+    .mob-ripple {
+        position: absolute;
+        border-radius: 50%;
+        transform: scale(0);
+        animation: mobRippleAnim 0.6s linear;
+        background-color: rgba(160, 59, 86, 0.15);
+        pointer-events: none;
+    }
+    @keyframes mobRippleAnim { to { transform: scale(4); opacity: 0; } }
+    @keyframes mobSlideUpBounce {
+        0% { transform: translateY(40px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+    @keyframes mobPawPulse {
+        0%, 100% { transform: rotate(-5deg) scale(1); }
+        50% { transform: rotate(5deg) scale(1.15); }
+    }
+    /* 手机端：把 main 显式设个低 z-index，让 popover (z-110) 能浮在卡片之上 */
+    #main-content {
+        position: relative;
+        z-index: 1;
+    }
+    /* 移动端分类 popover（从底栏 "分类" 图标向上弹） */
+    #mob-cat-popover-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+    }
+    .mob-cat-popover {
+        position: fixed;
+        z-index: 110;
+        background: rgba(255, 255, 255, 0.96);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border-radius: 18px;
+        padding: 6px;
+        box-shadow: 0 12px 40px rgba(160, 59, 86, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        transform: translateY(10px) scale(0.92);
+        transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+        pointer-events: auto;
+    }
+    .mob-cat-popover.open {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    .mob-cat-popover-list {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .mob-cat-pop-item {
+        min-width: 140px;
+        height: 40px;
+        padding: 0 12px;
+        gap: 10px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        cursor: pointer;
+        border: none;
+        transition: box-shadow 0.18s ease, outline-color 0.18s ease, background-color 0.18s ease;
+        touch-action: none;
+    }
+    .mob-cat-pop-item .material-symbols-outlined { font-size: 22px; }
+    .mob-cat-pop-item-name {
+        font-size: 13px;
+        font-weight: 500;
+        line-height: 1;
+        white-space: nowrap;
+    }
+    .mob-cat-pop-item:active {
+        transform: scale(0.96);
+    }
+    .mob-cat-popover-arrow {
+        position: absolute;
+        bottom: -5px;
+        width: 10px;
+        height: 10px;
+        background: rgba(255, 255, 255, 0.96);
+        transform: rotate(45deg);
+        border-radius: 2px;
     }
 }
 
@@ -1093,19 +1339,19 @@
     </style>
 </head>
 <body class="bg-background text-on-background min-h-screen antialiased">
-    <!-- 手机顶部栏（lg 以下显示，桌面隐藏） -->
-    <header id="mobile-topbar" class="mob-only fixed top-0 inset-x-0 z-40 h-14 backdrop-blur-xl bg-surface-container/80 border-b border-outline-variant/30 flex items-center px-3 gap-2" style="padding-top: var(--safe-top); height: calc(var(--mob-topbar-h) + var(--safe-top));">
-        <button id="mobile-back-btn" type="button" aria-label="返回" class="hidden w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition" title="返回">
-            <span class="material-symbols-outlined text-2xl">arrow_back</span>
+    <!-- 手机顶部栏（参考设计：pets 图标 + 标题 + 搜索） -->
+    <header id="mobile-topbar" class="mob-only fixed top-0 inset-x-0 z-50 bg-surface/60 backdrop-blur-xl shadow-[0_0_20px_rgba(160,59,86,0.15)] flex justify-between items-center px-margin-mobile" style="padding-top: var(--safe-top); height: calc(var(--mob-topbar-h) + var(--safe-top));">
+        <button id="mobile-back-btn" type="button" aria-label="返回" class="hidden text-primary hover:animate-paw-pulse transition-transform p-2 rounded-full interactive-element" title="返回">
+            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">arrow_back</span>
         </button>
-        <button id="mobile-add-btn" type="button" aria-label="添加站点" class="w-10 h-10 rounded-full flex items-center justify-center text-primary hover:bg-primary/10 active:scale-95 transition" title="添加站点">
-            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">add_circle</span>
+        <button id="mobile-menu-btn" type="button" aria-label="添加新链接" class="text-primary hover:animate-paw-pulse transition-transform p-2 rounded-full hover:bg-surface-variant/50 interactive-element" title="添加新链接">
+            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">pets</span>
         </button>
-        <h1 id="mobile-title" class="flex-1 text-center text-base font-headline font-semibold text-on-surface truncate">枢纽</h1>
-        <button id="mobile-theme-btn" type="button" aria-label="切换主题" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition" title="切换主题">
+        <button id="mobile-theme-btn" type="button" aria-label="切换主题" class="text-primary transition-transform p-2 rounded-full hover:bg-surface-variant/50 interactive-element ml-1" title="切换主题">
             <span class="material-symbols-outlined text-2xl">dark_mode</span>
         </button>
-        <button id="mobile-search-btn" type="button" aria-label="搜索" class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high active:scale-95 transition" title="搜索">
+        <h1 id="mobile-title" class="font-display-lg text-headline-lg-mobile text-primary tracking-tight flex-1 text-center">枢纽</h1>
+        <button id="mobile-search-btn" type="button" aria-label="搜索" class="text-primary transition-transform p-2 rounded-full hover:bg-surface-variant/50 interactive-element" title="搜索">
             <span class="material-symbols-outlined text-2xl">search</span>
         </button>
     </header>
@@ -1114,13 +1360,13 @@
     <div class="fixed inset-0 z-0 page-bg pointer-events-none" aria-hidden="true"></div>
     <div class="fixed inset-0 z-0 page-bg-overlay pointer-events-none" aria-hidden="true"></div>
 
-    <!-- 浮动侧边栏切换按钮（左上，爪印图标 + 持续光晕） -->
-    <div class="!fixed top-6 left-6 z-[60] glass-card glass-card-pink rounded-full p-3 inline-flex shadow-[0_0_20px_rgba(255,133,161,0.3)] cursor-pointer hover:scale-110 transition-transform flex-shrink-0 animate-magic-glow" id="sidebar-toggle" role="button" tabindex="0" aria-label="切换侧边栏">
+    <!-- 桌面专属：侧边栏切换按钮 -->
+    <div class="desk-only !fixed top-6 left-6 z-[60] glass-card glass-card-pink rounded-full p-3 inline-flex shadow-[0_0_20px_rgba(255,133,161,0.3)] cursor-pointer hover:scale-110 transition-transform flex-shrink-0 animate-magic-glow" id="sidebar-toggle" role="button" tabindex="0" aria-label="切换侧边栏">
         <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">pets</span>
     </div>
 
-    <!-- 浮动侧边栏 -->
-    <aside class="fixed left-6 top-24 bottom-6 z-50 floating-sidebar flex flex-col" id="floating-sidebar" style="width: 258px;">
+    <!-- 桌面专属：浮动侧边栏 -->
+    <aside class="desk-only fixed left-6 top-24 bottom-6 z-50 floating-sidebar flex flex-col" id="floating-sidebar" style="width: 258px;">
         <!-- 拖拽改宽手柄 -->
         <div class="absolute top-0 right-0 w-3 h-full cursor-col-resize hover:bg-primary/20 transition-colors z-50 rounded-r-2xl flex items-center justify-center group" id="resize-handle">
             <div class="h-12 w-1 bg-primary/30 rounded-full group-hover:bg-primary/60"></div>
@@ -1164,11 +1410,11 @@
 
     <!-- 主内容区 -->
     <main class="transition-all duration-300 ease-in-out flex-1 w-full flex flex-col pt-16 px-8 md:px-margin-desktop pb-20 max-w-[1400px] mx-auto" id="main-content" style="padding-left: 80px;">
-        <!-- 顶部 header -->
-        <header class="w-full flex flex-col md:flex-row md:items-end justify-between mb-12 animate-stagger-fade-in stagger-1 gap-6">
+        <!-- 桌面专属：顶部 header -->
+        <header class="desk-only w-full flex flex-col md:flex-row md:items-end justify-between mb-12 animate-stagger-fade-in stagger-1 gap-6">
             <div>
                 <h1 class="font-display-lg text-4xl font-bold text-primary mb-3 drop-shadow-sm flex items-center gap-4">
-                    <span class="material-symbols-outlined text-8xl animate-spin-slow">star</span>
+                    <span class="material-symbols-outlined text-8xl animate-spin-slow" style="font-variation-settings: 'FILL' 1;">star</span>
                     <span id="page-title">链接万物&nbsp;&nbsp;随心跳转</span>
                 </h1>
                 <p class="font-body-md text-body-md text-on-surface-variant max-w-xl bg-white/50 dark:bg-inverse-surface/50 px-4 py-2 rounded-lg border border-primary/10" id="page-subtitle">
@@ -1187,13 +1433,18 @@
             </div>
         </header>
 
-        <!-- 搜索框 -->
-        <div class="mb-8 relative animate-stagger-fade-in stagger-2">
+        <!-- 桌面专属：搜索框 -->
+        <div class="desk-only mb-8 relative animate-stagger-fade-in stagger-2">
             <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-primary/60">search</span>
             <input type="text" id="search-input" placeholder="搜索维度 (按名称/URL/描述)..."
                 class="magic-input pl-12" autocomplete="off">
         </div>
 
+        <!-- 手机端欢迎区 -->
+        <div class="mob-only mb-6 pl-2 animate-slide-up-bounce stagger-2" style="animation: mobSlideUpBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;">
+            <h2 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-1">欢迎回来</h2>
+            <p class="font-body-md text-body-md text-on-surface-variant" id="mob-welcome-sub">当前刻印 <span id="mob-stat-cards">0</span> 个链接</p>
+        </div>
         <!-- 卡片网格 -->
         <div class="w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8" id="card-grid"></div>
     </main>
@@ -1454,6 +1705,12 @@
         let _draggedEl = null;
         let _lastMouseX = null;
         let _lastMouseY = null;
+        // 移动端拖拽换分类 popover 状态
+        let _dropZoneTimer = null;
+        let _dragCatPopover = null;
+        let _dragHoverCatId = null;
+        let _lastDragHoverItem = null;
+        let _postDragGuardUntil = 0;  // 拖动结束后 1s 内的"冷却期"，期间屏蔽卡片 click / 菜单按钮（防止松手时 click 误触弹设置）
 
         const DEFAULT_CATEGORIES = [
             { id: 'cat-chat',     name: '聊天AI',   color: 'blue' },
@@ -1626,17 +1883,13 @@
                     cards: payload.cards || state.cards,
                     theme: payload.theme || state.theme
                 });
-                if (navigator.sendBeacon) {
-                    const blob = new Blob([body], { type: 'application/json' });
-                    navigator.sendBeacon('http://127.0.0.1:9001/state', blob);
-                } else {
-                    fetch('http://127.0.0.1:9001/state', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body,
-                        keepalive: true
-                    }).catch(() => {});
-                }
+                fetch('http://127.0.0.1:9001/state', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body,
+                    keepalive: true,
+                    credentials: 'omit'
+                }).catch(() => {});
             } catch (e) {}
         }
 
@@ -1660,6 +1913,8 @@
         if (!state.theme) state.theme = 'light';
         if (!state.view) state.view = 'hub';
         if (state.currentCategoryId === undefined) state.currentCategoryId = null;
+        // 同步过滤源（renderCards 用 activeCategoryId）：把持久化的 currentCategoryId 灌进去
+        if (state.currentCategoryId) activeCategoryId = state.currentCategoryId;
         syncStateToServer(state);
 
         (async function autofillIcons() {
@@ -1778,31 +2033,44 @@
 
             const wrapper = document.createElement('div');
             if (mobile) {
-                // ===== 手机单行布局 =====
+                // ===== 手机卡片（参考设计风格） =====
                 const catIcon = cat ? (cat.icon || (COLOR_MAP[cat.color] || COLOR_MAP.gray).icon) : cm.icon;
+                const colorKey = color === 'gray' ? 'variant' : (color === 'blue' ? 'secondary' : (color === 'orange' ? 'tertiary' : 'primary'));
+                const isCustom = cat && cat.customColor;
                 const catHex = cat ? getCategoryHex(cat) : (COLOR_RGB[color] || COLOR_RGB.gray);
-                wrapper.className = 'mob-card glass-card glass-card-' + color + ' rounded-2xl p-4 flex flex-row gap-3 items-center relative cursor-pointer';
-                wrapper.style.animation = `staggerFadeIn 0.4s ease-out ${Math.min(index, 8) * 30}ms both`;
+                const iconBgClass = isCustom ? '' : `bg-${colorKey}-container`;
+                const iconTextClass = isCustom ? '' : `text-on-${colorKey}-container`;
+                const iconShadowClass = isCustom ? '' : `shadow-lg shadow-${colorKey}-container/40`;
+                const labelColorClass = isCustom ? '' : `text-${colorKey}`;
+                const customIconBg = isCustom ? `style="background: ${hexToRgba(catHex, 0.22)};"` : '';
+                const customIconText = isCustom ? `style="color: ${catHex};"` : '';
+                const customLabelColor = isCustom ? `style="color: ${catHex};"` : '';
+                wrapper.className = 'mob-card draggable-item glass-card rounded-xl p-5 relative overflow-hidden cursor-grab active:cursor-grabbing interactive-element';
+                wrapper.style.animation = `mobSlideUpBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) ${0.1 + Math.min(index, 5) * 0.1}s both`;
                 wrapper.dataset.cardId = card.id;
                 wrapper.dataset.categoryId = card.categoryId;
                 wrapper.innerHTML = `
-                    <div class="w-14 h-14 rounded-xl flex items-center justify-center shrink-0" style="background: ${hexToRgba(catHex, 0.2)};">
-                        ${card.iconUrl ? `<img src="${escapeHtml(card.iconUrl)}" alt="" class="w-9 h-9 object-contain rounded-md" data-favicon-fallback="${escapeHtml(catIcon)}" />` : `<span class="material-symbols-outlined text-2xl text-${color}-700" style="font-variation-settings: 'FILL' 1;">${catIcon}</span>`}
+                    <div class="mob-glass-highlight"></div>
+                    <div class="flex items-start gap-4 relative z-10">
+                        <div class="w-12 h-12 rounded-full ${iconBgClass} ${iconShadowClass} flex items-center justify-center shrink-0" ${customIconBg}>
+                            ${card.iconUrl ? `<img src="${escapeHtml(card.iconUrl)}" alt="" class="w-7 h-7 object-contain rounded-md" data-favicon-fallback="${escapeHtml(catIcon)}" data-cat-hex="${escapeHtml(catHex)}" />` : `<span class="material-symbols-outlined text-xl ${iconTextClass}" style="font-variation-settings: 'FILL' 1;" ${customIconText}>${catIcon}</span>`}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h3 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface font-bold leading-tight">${escapeHtml(card.name)}</h3>
+                            <div class="font-label-sm text-label-sm mt-0.5 text-on-surface-variant/60">${escapeHtml(catName)}</div>
+                            <p class="font-body-md text-body-md text-on-surface-variant mt-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(card.description || domain)}</p>
+                        </div>
+                        <button class="mob-card-menu-btn text-on-surface-variant hover:text-primary transition-colors p-1 rounded-full interactive-element shrink-0" aria-label="操作" type="button">
+                            <span class="material-symbols-outlined text-xl">more_vert</span>
+                        </button>
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-base font-headline font-semibold text-on-surface truncate">${escapeHtml(card.name || domain)}</div>
-                        <div class="text-xs text-on-surface-variant/70 truncate">${escapeHtml(domain)}${card.description ? ' · ' + escapeHtml(card.description.slice(0, 30)) : ''}</div>
-                    </div>
-                    <button class="mob-card-menu-btn w-9 h-9 rounded-full flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface hover:bg-surface-container-high active:scale-95 shrink-0" aria-label="操作" type="button">
-                        <span class="material-symbols-outlined text-xl">more_vert</span>
-                    </button>
                 `;
                 // 图标加载失败 → 回退到 Material Symbols 文字
                 const iconImg = wrapper.querySelector('img[data-favicon-fallback]');
                 if (iconImg) {
                     const fallbackIcon = iconImg.dataset.faviconFallback;
                     iconImg.addEventListener('error', () => {
-                        iconImg.outerHTML = `<span class="material-symbols-outlined text-2xl text-${color}-700" style="font-variation-settings: 'FILL' 1;">${fallbackIcon}</span>`;
+                        iconImg.outerHTML = `<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1; color: ${catHex};">${fallbackIcon}</span>`;
                     });
                 }
                 const menuBtn = wrapper.querySelector('.mob-card-menu-btn');
@@ -1916,6 +2184,8 @@
         function renderStats() {
             document.getElementById('stat-platforms-text').textContent = state.cards.length + ' 个平台';
             document.getElementById('stat-categories-text').textContent = state.categories.length + ' 个分类';
+            const mobStat = document.getElementById('mob-stat-cards');
+            if (mobStat) mobStat.textContent = state.cards.length;
         }
 
         function updatePageHeader() {
@@ -1970,8 +2240,8 @@
                     </button>
                     <input type="text" value="${escapeHtml(cat.name)}" data-cat-id="${cat.id}" class="flex-1 bg-transparent text-sm font-body-md focus:outline-none px-2 py-1 rounded border border-transparent focus:border-primary/30 min-w-0" ${isOther ? 'readonly' : ''}>
                     <span class="text-xs text-outline shrink-0 font-label-sm">${count}</span>
-                    ${isOther ? '' : `<button data-rename-id="${cat.id}" type="button" class="magic-btn-mini"><span class="material-symbols-outlined text-xs">save</span>保存</button>`}
-                    <button data-delete-id="${cat.id}" type="button" class="magic-btn-mini" style="background:rgba(186,26,26,0.1);color:#ba1a1a;" ${isOther ? 'disabled style="opacity:.4;cursor:not-allowed;background:rgba(186,26,26,0.05);color:#ba1a1a;"' : ''}><span class="material-symbols-outlined text-xs">delete</span>删</button>
+                    ${isOther ? '' : `<button data-rename-id="${cat.id}" type="button" class="magic-btn-mini"><span class="material-symbols-outlined text-xs">save</span></button>`}
+                    <button data-delete-id="${cat.id}" type="button" class="magic-btn-mini" style="background:rgba(186,26,26,0.1);color:#ba1a1a;" ${isOther ? 'disabled style="opacity:.4;cursor:not-allowed;background:rgba(186,26,26,0.05);color:#ba1a1a;"' : ''}><span class="material-symbols-outlined text-xs">delete</span></button>
                     <div class="cat-color-popover hidden" data-color-popover-for="${cat.id}">
                         <div>
                             <div class="cat-color-section-title">预设色</div>
@@ -2205,17 +2475,16 @@
             updateMobileBackBtn();
             if (isMobile()) {
                 rebindCardSortableMobile();
-                renderMobileCategoryGrid();
-                const catGrid = document.getElementById('mobile-category-grid');
                 const cardGrid = document.getElementById('card-grid');
-                if (state.view === 'categories' && !state.currentCategoryId) {
-                    catGrid.style.display = 'grid';
-                    cardGrid.style.display = 'none';
-                } else {
-                    catGrid.style.display = 'none';
-                    cardGrid.style.display = 'flex';
-                }
+                cardGrid.style.display = 'flex';
+                cardGrid.style.flexDirection = 'column';
+                cardGrid.style.gap = '16px';
             } else {
+                // 桌面端恢复 grid + 移除 inline override
+                const cardGrid = document.getElementById('card-grid');
+                cardGrid.style.display = '';
+                cardGrid.style.flexDirection = '';
+                cardGrid.style.gap = '';
                 rebindCardSortable();
             }
         }
@@ -2224,9 +2493,21 @@
         // 手机端外壳：tab 切换 / 主题/添加/返回 事件
         // ============================================
         function switchMobileView(view) {
+            // 手机端 "分类" tab 走弹窗菜单（从图标向上弹的小竖条）
+            if (isMobile() && view === 'categories') {
+                const trigger = document.querySelector('#mobile-bottom-nav .mob-tab[data-tab="categories"]');
+                if (trigger) openMobileCategoryPopover(trigger);
+                return;
+            }
+            // 手机端 "档案" tab 走"管理分类"弹窗（添加/删除/重命名）
+            if (isMobile() && view === 'archive') {
+                openCategoriesModal();
+                return;
+            }
             state.view = view;
             if (view === 'hub' || view === 'archive') {
                 state.currentCategoryId = null;
+                activeCategoryId = 'all';
             }
             renderAll();
             updateMobileTabUI();
@@ -2238,21 +2519,19 @@
             tabs.forEach(tab => {
                 const v = tab.dataset.tab;
                 const isActive = v === state.view;
-                const indicator = tab.querySelector('.mob-tab-indicator');
-                const icon = tab.querySelector('.mob-tab-icon');
+                const icon = tab.querySelector('.mob-tab-icon') || tab.querySelector('.material-symbols-outlined');
                 const label = tab.querySelector('.mob-tab-label');
-                if (isActive) {
-                    indicator.classList.remove('bg-transparent');
-                    indicator.classList.add('bg-primary');
-                    icon.style.fontVariationSettings = "'FILL' 1";
-                    label.classList.add('text-primary', 'font-semibold');
-                    label.classList.remove('text-on-surface-variant');
-                } else {
-                    indicator.classList.add('bg-transparent');
-                    indicator.classList.remove('bg-primary');
-                    icon.style.fontVariationSettings = "'FILL' 0";
-                    label.classList.remove('text-primary', 'font-semibold');
-                    label.classList.add('text-on-surface-variant');
+                if (icon) {
+                    icon.style.fontVariationSettings = isActive ? "'FILL' 1" : "'FILL' 0";
+                }
+                if (label) {
+                    if (isActive) {
+                        label.classList.add('text-primary', 'font-semibold');
+                        label.classList.remove('text-on-surface-variant');
+                    } else {
+                        label.classList.remove('text-primary', 'font-semibold');
+                        label.classList.add('text-on-surface-variant');
+                    }
                 }
             });
         }
@@ -2288,6 +2567,11 @@
 
             cardEl.addEventListener('touchmove', (e) => {
                 if (e.touches.length !== 1) return;
+                // 拖动期间 / 拖动后冷却期：禁用左滑弹设置（SortableJS 拖动中的横移会误触）
+                if (_isDragging || Date.now() < _postDragGuardUntil) {
+                    swiping = true; // 标记为"已 swiping"避免松手后又触发
+                    return;
+                }
                 const dx = e.touches[0].clientX - startX;
                 const dy = e.touches[0].clientY - startY;
                 if (Math.abs(dy) > Math.abs(dx) * 1.2) return;
@@ -2311,14 +2595,17 @@
         function applyTheme(theme) {
             const html = document.documentElement;
             const icon = document.getElementById('theme-icon');
+            const mobIcon = document.querySelector('#mobile-theme-btn .material-symbols-outlined');
             if (theme === 'dark') {
                 html.classList.add('dark');
                 html.style.colorScheme = 'dark';
                 if (icon) icon.textContent = 'light_mode';
+                if (mobIcon) mobIcon.textContent = 'light_mode';
             } else {
                 html.classList.remove('dark');
                 html.style.colorScheme = 'light';
                 if (icon) icon.textContent = 'dark_mode';
+                if (mobIcon) mobIcon.textContent = 'dark_mode';
             }
         }
 
@@ -2333,7 +2620,10 @@
         function setSidebarCollapsed(collapsed) {
             isSidebarCollapsed = collapsed;
             sidebar.classList.toggle('collapsed', collapsed);
-            if (collapsed) {
+            if (isMobile()) {
+                // 移动端：sidebar 隐藏，main 不需要 left padding
+                mainContent.style.paddingLeft = '';
+            } else if (collapsed) {
                 mainContent.style.paddingLeft = '80px';
             } else {
                 mainContent.style.paddingLeft = (sidebarWidth + 60) + 'px';
@@ -2347,8 +2637,9 @@
         document.getElementById('sidebar-toggle').addEventListener('click', () => {
             setSidebarCollapsed(!isSidebarCollapsed);
         });
-        // 初始展开
-        setSidebarCollapsed(false);
+        // 初始展开（仅桌面端；移动端会先 reset paddingLeft）
+        if (!isMobile()) setSidebarCollapsed(false);
+        else mainContent.style.paddingLeft = '';
 
         // 拖拽改宽
         const resizeHandle = document.getElementById('resize-handle');
@@ -2371,7 +2662,7 @@
             if (newWidth > MAX_WIDTH) newWidth = MAX_WIDTH;
             sidebarWidth = newWidth;
             sidebar.style.width = sidebarWidth + 'px';
-            if (!isSidebarCollapsed) mainContent.style.paddingLeft = (sidebarWidth + 60) + 'px';
+            if (!isSidebarCollapsed && !isMobile()) mainContent.style.paddingLeft = (sidebarWidth + 60) + 'px';
         });
         document.addEventListener('mouseup', () => {
             if (isResizing) {
@@ -3079,12 +3370,84 @@
         // ============================================
         // 全局拖动跟踪：跟踪鼠标坐标 + 找到鼠标下的合法分类项并高亮 + 标记被拖卡片在目标位
         function onDragMove(e) {
-            _lastMouseX = e.clientX;
-            _lastMouseY = e.clientY;
+            // 兼容 touch 与 mouse：touchmove 的坐标在 e.touches[0]，不是顶层
+            let cx, cy;
+            if (e.touches && e.touches.length > 0) {
+                cx = e.touches[0].clientX;
+                cy = e.touches[0].clientY;
+            } else if (e.changedTouches && e.changedTouches.length > 0) {
+                cx = e.changedTouches[0].clientX;
+                cy = e.changedTouches[0].clientY;
+            } else {
+                cx = e.clientX;
+                cy = e.clientY;
+            }
+            if (cx == null || cy == null || isNaN(cx) || isNaN(cy)) return;
+            _lastMouseX = cx;
+            _lastMouseY = cy;
             if (!_isDragging) return;
+
+            // ---- 移动端：悬停"分类"底栏按钮 200ms → 复用底栏 popover；
+            //      popover 弹出后**不再自动关闭**（避免手指穿过 tab→popover 之间的 12px 间隙时被关掉），
+            //      只在松手（onEnd）时统一关。手指移出 popover 时只清高亮，保留弹窗。 ----
+            if (isMobile()) {
+                const elAtPoint = document.elementFromPoint(cx, cy);
+                // 检查是不是悬停在"分类"底栏 tab 上
+                const overCatTab = elAtPoint && elAtPoint.closest('#mobile-bottom-nav .mob-tab[data-tab="categories"]');
+
+                if (overCatTab && !_dragCatPopover) {
+                    // 悬停"分类"按钮：开始 200ms 倒计时
+                    if (!_dropZoneTimer) {
+                        _dropZoneTimer = setTimeout(() => {
+                            _dropZoneTimer = null;
+                            showDragCategoryPopover(overCatTab);
+                        }, 200);
+                    }
+                } else if (!overCatTab) {
+                    // 不在 tab 上：取消倒计时（popover 已弹出则不关）
+                    if (_dropZoneTimer) { clearTimeout(_dropZoneTimer); _dropZoneTimer = null; }
+                }
+
+                // popover 已弹出：只更新高亮，**绝不关**（关的操作只在 onEnd 触发）。
+                // 原因：popover 自身有 220ms 进入动画，期间位置在变，若在 onDragMove 里判"离开就关"会闪烁 / 弹不出来。
+                if (_dragCatPopover) {
+                    let overPopItem = null;
+                    if (elAtPoint) {
+                        overPopItem = elAtPoint.closest('.mob-cat-pop-item[data-cat-id]');
+                    }
+                    // 关键：只有悬停项变化时才切样式（避免每帧重置 transform 触发 transition 导致闪烁）
+                    if (overPopItem !== _lastDragHoverItem) {
+                        // 1) 清上一次的高亮
+                        if (_lastDragHoverItem && _lastDragHoverItem.classList) {
+                            _lastDragHoverItem.classList.remove('drag-hover');
+                            _lastDragHoverItem.style.transform = '';
+                            _lastDragHoverItem.style.boxShadow = '';
+                            _lastDragHoverItem.style.outline = '';
+                        }
+                        // 2) 设当前高亮
+                        if (overPopItem) {
+                            const catId = overPopItem.dataset.catId;
+                            const cat = state.categories.find(c => c.id === catId);
+                            const hex = cat ? getCategoryHex(cat) : '#a03b56';
+                            overPopItem.classList.add('drag-hover');
+                            overPopItem.style.transform = 'scale(1.05)';
+                            overPopItem.style.boxShadow = `0 4px 16px ${hexToRgba(hex, 0.45)}, inset 0 0 0 2px ${hex}`;
+                            overPopItem.style.outline = `2px solid ${hex}`;
+                            overPopItem.style.outlineOffset = '0px';
+                            _dragHoverCatId = catId;
+                        } else {
+                            _dragHoverCatId = null;
+                        }
+                        _lastDragHoverItem = overPopItem;
+                    }
+                }
+                return;
+            }
+
+            // ---- 桌面端：sidebar 分类高亮 ----
             const list = document.getElementById('sidebar-categories');
             if (!list) return;
-            // 折叠态不接收 drop，不做高亮，也不让被拖卡片虚化
+            // 折叠态不接收 drop
             if (isSidebarCollapsed) {
                 if (_lastHoverCatId !== null) {
                     list.querySelectorAll('.sortable-item.drop-target').forEach(el => el.classList.remove('drop-target'));
@@ -3094,7 +3457,7 @@
                 if (drag) drag.classList.remove('drag-over-target');
                 return;
             }
-            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const el = document.elementFromPoint(cx, cy);
             const catItem = el ? el.closest('#sidebar-categories .sortable-item[data-cat-id]') : null;
             // 排除 "all" / "创建分类" 等非法目标
             const catId = (catItem && catItem.dataset.catId && catItem.dataset.catId !== 'all') ? catItem.dataset.catId : null;
@@ -3123,6 +3486,7 @@
         }
 
         function clearDropHighlights() {
+            closeDragCategoryPopover();
             const list = document.getElementById('sidebar-categories');
             if (!list) return;
             list.querySelectorAll('.sortable-item.drop-target').forEach(el => el.classList.remove('drop-target'));
@@ -3132,8 +3496,32 @@
 
         // 松手时根据最后记录的鼠标位置判定是否换分类
         function tryChangeCategoryAtMouse(cardId) {
-            if (isSidebarCollapsed) return false;
             if (_lastMouseX === null || _lastMouseY === null) return false;
+
+            // 移动端：检查是否拖到了拖拽 popover 的分类上（复用了底栏点击分类的同款 popover）
+            if (isMobile() && (_dragCatPopover || _dragHoverCatId)) {
+                // 优先用 _dragHoverCatId（更可靠，因为 onDragMove 已经记录）
+                let targetCatId = _dragHoverCatId;
+                if (!targetCatId && _dragCatPopover) {
+                    const el = document.elementFromPoint(_lastMouseX, _lastMouseY);
+                    const catItem = el ? el.closest('.mob-cat-pop-item[data-cat-id]') : null;
+                    targetCatId = catItem ? catItem.dataset.catId : null;
+                }
+                if (targetCatId) {
+                    const card = state.cards.find(c => c.id === cardId);
+                    if (card && card.categoryId !== targetCatId) {
+                        card.categoryId = targetCatId;
+                        saveState(); renderAll();
+                        const cat = getCategory(targetCatId);
+                        showToast(`已移动到「${cat ? cat.name : ''}」`, cat);
+                    }
+                    return true;
+                }
+                return false;
+            }
+
+            // 桌面端
+            if (isSidebarCollapsed) return false;
             const el = document.elementFromPoint(_lastMouseX, _lastMouseY);
             if (!el) return false;
             const catEl = el.closest('#sidebar-categories .sortable-item[data-cat-id]');
@@ -3148,6 +3536,36 @@
             const cat = getCategory(catEl.dataset.catId);
             showToast(`已移动到「${cat ? cat.name : '新分类'}」`, cat);
             return true;
+        }
+
+        // ---- 移动端拖拽换分类：复用底栏"分类"tab 弹出的同款 popover ----
+        // 拖动悬停"分类"按钮 200ms 后调用本函数，trigger 是底栏 "分类" 按钮元素。
+        function showDragCategoryPopover(trigger) {
+            closeDragCategoryPopover();
+            if (!trigger) return;
+            // 直接复用底栏分类 popover 的渲染（视觉一致）
+            openMobileCategoryPopover(trigger);
+            const pop = document.getElementById('mob-cat-popover');
+            if (!pop) return;
+            // 标记为"拖拽态"用：禁止 click 选分类（拖拽中点击会误触），改由 onEnd 处理
+            pop.dataset.dragMode = '1';
+            // 拖拽态下让 popover 不吃指针事件，让 elementFromPoint 落到 .mob-cat-pop-item 上时
+            // 仍能正常拿到。但 .mob-cat-pop-item 本身要能被 elementFromPoint 命中。
+            // 默认的 popover 已经 pointer-events: auto，不需要改。
+            // 移除 backdrop（拖拽时不应该有遮罩拦截拖动事件）
+            const back = document.getElementById('mob-cat-popover-backdrop');
+            if (back) back.remove();
+            _dragCatPopover = pop;
+        }
+        function closeDragCategoryPopover() {
+            if (_dropZoneTimer) { clearTimeout(_dropZoneTimer); _dropZoneTimer = null; }
+            if (_dragCatPopover) {
+                _dragCatPopover.remove();
+                _dragCatPopover = null;
+            }
+            const back = document.getElementById('mob-cat-popover-backdrop');
+            if (back) back.remove();
+            // 注意：不清 _dragHoverCatId，因为 onEnd 在 close 之后才读它判定换分类目标
         }
 
         function rebindCardSortable() {
@@ -3173,6 +3591,8 @@
                     _draggedEl = evt.item;
                     _lastMouseX = null;
                     _lastMouseY = null;
+                    _dragHoverCatId = null;
+                    _lastDragHoverItem = null;
                     document.body.classList.add('is-dragging');
                     const card = evt.item.querySelector('.glass-card');
                     if (card) card.style.animationName = 'none';
@@ -3184,11 +3604,8 @@
                     document.removeEventListener('mousemove', onDragMove);
                     document.removeEventListener('touchmove', onDragMove);
                     document.body.classList.remove('is-dragging');
-                    clearDropHighlights();
-                    const card = evt.item.querySelector('.glass-card');
-                    if (card) card.style.animationName = '';
-                    const cardId = evt.item.dataset.cardId;
                     // 1) 优先：用最后记录的鼠标位置判定是否换分类（侧边栏已 put:false 不会插 DOM，位置稳定）
+                    const cardId = evt.item.dataset.cardId;
                     if (cardId && tryChangeCategoryAtMouse(cardId)) {
                         // 换分类成功
                     } else if (evt.from === evt.to && evt.oldIndex !== evt.newIndex) {
@@ -3206,6 +3623,9 @@
                         if (evt.item.parentNode) evt.item.parentNode.removeChild(evt.item);
                         renderAll();
                     }
+                    clearDropHighlights();
+                    const cardEl = evt.item.querySelector('.glass-card');
+                    if (cardEl) cardEl.style.animationName = '';
                     evt.item.classList.remove('settle-bounce');
                     void evt.item.offsetWidth;
                     evt.item.classList.add('settle-bounce');
@@ -3213,7 +3633,21 @@
                     _lastHoverCatId = null;
                     _lastMouseX = null;
                     _lastMouseY = null;
+                    _dragHoverCatId = null;
+                    _lastDragHoverItem = null;
                     _draggedEl = null;
+                    // ===== 拖动后冷却期（1s 内屏蔽卡片 click / 菜单按钮）=====
+                    // 原因：mouseup 之后 click 事件比 onEnd 晚一帧，onEnd 立刻重置 _isDragging=false
+                    // 时 click 已经派发并触发了卡片的 open url。1s 内禁用：避免松手瞬间误触弹设置。
+                    document.body.classList.add('has-recent-drag');
+                    _postDragGuardUntil = Date.now() + 1000;
+                    setTimeout(() => {
+                        // 用时间戳二次校验：如果用户在这 1s 内又开了新拖动，is-dragging 重新加上，
+                        // 冷却期结束要保留 has-recent-drag 直到那次拖动结束
+                        if (Date.now() >= _postDragGuardUntil && !_isDragging) {
+                            document.body.classList.remove('has-recent-drag');
+                        }
+                    }, 1000);
                 }
             });
             } catch (e) {
@@ -3236,10 +3670,29 @@
                 forceFallback: true,
                 fallbackClass: 'sortable-drag',
                 easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                onStart: () => document.body.classList.add('is-dragging'),
+                onStart: (evt) => {
+                    _isDragging = true;
+                    _draggedEl = evt.item;
+                    _lastMouseX = null;
+                    _lastMouseY = null;
+                    _dragHoverCatId = null;
+                    document.body.classList.add('is-dragging');
+                    const card = evt.item.querySelector('.glass-card');
+                    if (card) card.style.animationName = 'none';
+                    document.addEventListener('mousemove', onDragMove);
+                    document.addEventListener('touchmove', onDragMove, { passive: true });
+                },
                 onEnd: (evt) => {
+                    _isDragging = false;
+                    document.removeEventListener('mousemove', onDragMove);
+                    document.removeEventListener('touchmove', onDragMove);
                     document.body.classList.remove('is-dragging');
-                    if (evt.from === evt.to && evt.oldIndex !== evt.newIndex) {
+                    // 先尝试换分类（必须在 clearDropHighlights 之前，因为它会读 _dragHoverCatId / _dragCatPopover）
+                    const cardId = evt.item.dataset.cardId;
+                    let categoryChanged = false;
+                    if (cardId && tryChangeCategoryAtMouse(cardId)) {
+                        categoryChanged = true;
+                    } else if (evt.from === evt.to && evt.oldIndex !== evt.newIndex) {
                         const newOrderIds = Array.from(evt.to.children)
                             .filter(el => el.classList.contains('sortable-item') || el.classList.contains('mob-card'))
                             .map(el => el.dataset.cardId);
@@ -3247,65 +3700,112 @@
                         const others = state.cards.filter(c => !newOrderIds.includes(c.id));
                         state.cards = [...reordered, ...others];
                         saveState();
+                        showToast('已调整顺序');
                     }
+                    clearDropHighlights();
+                    const cardEl = evt.item.querySelector('.glass-card');
+                    if (cardEl) cardEl.style.animationName = '';
                     evt.item.classList.add('settle-bounce');
                     setTimeout(() => evt.item.classList.remove('settle-bounce'), 500);
+                    _lastHoverCatId = null;
+                    _lastMouseX = null;
+                    _lastMouseY = null;
+                    _dragHoverCatId = null;
+                    _draggedEl = null;
                 }
             });
         }
 
-        function renderMobileCategoryGrid() {
-            const grid = document.getElementById('mobile-category-grid');
-            if (!grid) return;
-            grid.innerHTML = '';
+        // 手机端：从 "分类" 图标向上弹出的小竖条菜单（popover），宽度 = 触发图标宽度
+        function openMobileCategoryPopover(trigger) {
+            closeMobileCategoryPopover();
+            const rect = trigger.getBoundingClientRect();
+            const pop = document.createElement('div');
+            pop.id = 'mob-cat-popover';
+            pop.className = 'mob-cat-popover';
+
+            // 半透明背景层（点击关闭）
+            const backdrop = document.createElement('div');
+            backdrop.id = 'mob-cat-popover-backdrop';
+            backdrop.addEventListener('click', closeMobileCategoryPopover);
+
+            const list = document.createElement('div');
+            list.className = 'mob-cat-popover-list';
             state.categories.forEach(cat => {
-                const count = state.cards.filter(c => c.categoryId === cat.id).length;
                 const cm = COLOR_MAP[cat.color] || COLOR_MAP.gray;
-                const card = document.createElement('button');
-                card.type = 'button';
-                card.className = 'mob-cat-tile glass-card glass-card-' + cat.color + ' rounded-2xl p-4 flex flex-col items-start gap-2 active:scale-95 transition text-left';
-                card.dataset.catId = cat.id;
                 const catIcon = cat.icon || cm.icon;
                 const catHex = getCategoryHex(cat);
-                card.innerHTML = `
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: ${hexToRgba(catHex, 0.25)};">
-                        <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">${catIcon}</span>
-                    </div>
-                    <div class="text-sm font-headline font-semibold text-on-surface truncate w-full">${escapeHtml(cat.name)}</div>
-                    <div class="text-xs text-on-surface-variant/70">${count} 个站点</div>
+                const isCustom = !!cat.customColor;
+                const colorKey = cat.color === 'gray' ? 'variant'
+                    : (cat.color === 'blue' ? 'secondary'
+                    : (cat.color === 'orange' ? 'tertiary' : 'primary'));
+                const bgClass = isCustom ? '' : `bg-${colorKey}-container`;
+                const textClass = isCustom ? '' : `text-on-${colorKey}-container`;
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = `mob-cat-pop-item ${bgClass} ${textClass}`.trim();
+                if (isCustom) item.setAttribute('style', `background:${hexToRgba(catHex, 0.22)};color:${catHex};`);
+                item.dataset.catId = cat.id;
+                item.title = cat.name;
+                item.setAttribute('aria-label', cat.name);
+                item.innerHTML = `
+                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">${catIcon}</span>
+                    <span class="mob-cat-pop-item-name">${escapeHtml(cat.name)}</span>
                 `;
-                card.addEventListener('click', () => {
-                    state.currentCategoryId = cat.id;
-                    renderAll();
-                });
-                grid.appendChild(card);
+                list.appendChild(item);
             });
+            pop.appendChild(list);
 
-            // SortableJS 让手机分类网格接收卡片
-            if (typeof Sortable !== 'undefined') {
-                if (grid.__sortable) grid.__sortable.destroy();
-                grid.__sortable = Sortable.create(grid, {
-                    group: { name: 'mobile', pull: false, put: true },
-                    animation: 250,
-                    delay: 75,
-                    delayOnTouchOnly: false,
-                    ghostClass: 'sortable-ghost',
-                    dragClass: 'sortable-drag',
-                    forceFallback: true,
-                    fallbackClass: 'sortable-drag',
-                    onAdd: (evt) => {
-                        const cardId = evt.item.dataset.cardId;
-                        const newCatId = evt.to.dataset.catId;
-                        const card = state.cards.find(c => c.id === cardId);
-                        if (card) {
-                            card.categoryId = newCatId;
-                            saveState();
-                            renderAll();
-                            showToast('已移动分类');
-                        }
-                    }
-                });
-            }
+            // 指向触发按钮的小箭头
+            const arrow = document.createElement('div');
+            arrow.className = 'mob-cat-popover-arrow';
+            pop.appendChild(arrow);
+
+            document.body.appendChild(backdrop);
+            document.body.appendChild(pop);
+
+            // 定位：水平居中对齐触发按钮，垂直在触发按钮上方
+            const popWidth = pop.offsetWidth || 56;
+            const popHeight = pop.offsetHeight || 200;
+            let left = rect.left + rect.width / 2 - popWidth / 2;
+            // 防止左右越界
+            const margin = 8;
+            left = Math.max(margin, Math.min(window.innerWidth - popWidth - margin, left));
+            pop.style.left = left + 'px';
+            pop.style.bottom = (window.innerHeight - rect.top + 12) + 'px';
+            // 箭头水平居中（相对 popover）
+            arrow.style.left = Math.max(10, Math.min(popWidth - 10, rect.left + rect.width / 2 - left)) + 'px';
+
+            requestAnimationFrame(() => pop.classList.add('open'));
+
+            // 分类点击：跳到该分类 + 关闭（拖拽触发的 popover 不在这里处理，由 onEnd 完成换分类）
+            list.addEventListener('click', (e) => {
+                const item = e.target.closest('button[data-cat-id]');
+                if (!item) return;
+                // 拖拽触发的 popover：忽略 click，松手时 onEnd 会换分类 + 关 popover
+                if (pop.dataset.dragMode === '1') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+                const catId = item.dataset.catId;
+                state.currentCategoryId = catId;
+                state.view = 'categories';
+                activeCategoryId = catId;
+                updateMobileTabUI();
+                renderAll();
+                scrollToTop();
+                closeMobileCategoryPopover();
+            }, { capture: true });
+        }
+
+        function closeMobileCategoryPopover() {
+            const pop = document.getElementById('mob-cat-popover');
+            const back = document.getElementById('mob-cat-popover-backdrop');
+            if (pop) pop.remove();
+            if (back) back.remove();
         }
 
         function rebindSidebarSortable() {
@@ -3399,6 +3899,54 @@
         syncSidebarSortableForState();
         rebindCardSortable();
 
+        // ===== 全局拦截：禁止卡片/图标/按钮被选中/长按 callout =====
+        // iOS Safari 对 user-select: none 的 img/button 仍会弹图片预览菜单，
+        // 必须用 selectstart 事件 preventDefault 才彻底压住。
+        document.addEventListener('selectstart', (e) => {
+            const t = e.target;
+            if (t.closest && t.closest('input, textarea, [contenteditable="true"]')) return;
+            e.preventDefault();
+        }, { passive: false });
+        // 拖动期间 + 拖动后 1s 冷却期：松手时如果落点在卡片/按钮/链接上，
+        // 会触发 click → 弹卡片设置 / 打开外链。click 是 mouseup 之后触发的，
+        // 比 onEnd 晚一帧，所以这里必须在 capture 阶段看到还在冷却期就 preventDefault。
+        // 注：用 capture + { passive: false } 保证能在卡片的 click 处理器之前拦截。
+        // 只拦卡片 / 菜单 / 链接相关的 click，不拦 popover / 弹窗 / 输入框。
+        document.addEventListener('click', (e) => {
+            if (_isDragging || Date.now() < _postDragGuardUntil) {
+                const t = e.target;
+                if (t && t.closest && t.closest('.mob-card, .glass-card, .card-menu-btn, .mob-card-menu-btn, a[href]')) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    e.stopImmediatePropagation();
+                }
+            }
+        }, { capture: true, passive: false });
+        // 卡片/图标区 contextmenu（移动端长按触发）→ 直接 preventDefault，
+        // 这是同步的，能彻底压住 iOS 图片预览菜单和 Android 文字选中蓝框。
+        document.addEventListener('contextmenu', (e) => {
+            const t = e.target;
+            if (!t || (t.closest && t.closest('input, textarea, [contenteditable="true"]'))) return;
+            e.preventDefault();
+        }, { passive: false });
+        // 华为/小米浏览器对 selectstart preventDefault 不一定响应（直接弹"复制/搜索"工具条）
+        // 兜底：监听 selectionchange，发现非输入框区域的选中立刻清空 + 收起菜单
+        document.addEventListener('selectionchange', () => {
+            const sel = window.getSelection && window.getSelection();
+            if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+            const anchor = sel.anchorNode;
+            const node = anchor && anchor.nodeType === 3 ? anchor.parentElement : anchor;
+            if (!node) return;
+            if (node.closest && node.closest('input, textarea, [contenteditable="true"]')) return;
+            sel.removeAllRanges();
+            if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+        });
+        // iOS Safari 多重保险：拦截 gesturestart（双指缩放弹出）和 contextmenu（iOS 长按右键）
+        document.addEventListener('gesturestart', (e) => {
+            if (e.target.closest('input, textarea, [contenteditable="true"]')) return;
+            e.preventDefault();
+        }, { passive: false });
+
         // ===== 手机端外壳事件绑定 =====
         document.querySelectorAll('#mobile-bottom-nav .mob-tab').forEach(tab => {
             tab.addEventListener('click', () => switchMobileView(tab.dataset.tab));
@@ -3423,6 +3971,34 @@
 
         updateMobileTabUI();
         updateMobileBackBtn();
+
+        // ===== 移动端 Ripple 效果（匹配参考设计） =====
+        function createMobRipple(e) {
+            const el = e.currentTarget;
+            const circle = document.createElement('span');
+            const diameter = Math.max(el.clientWidth, el.clientHeight);
+            const radius = diameter / 2;
+            const rect = el.getBoundingClientRect();
+            let clientX = e.clientX, clientY = e.clientY;
+            if (e.type.startsWith('touch') && e.touches?.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            }
+            circle.style.width = circle.style.height = `${diameter}px`;
+            circle.style.left = `${clientX - rect.left - radius}px`;
+            circle.style.top = `${clientY - rect.top - radius}px`;
+            circle.classList.add('mob-ripple');
+            const old = el.getElementsByClassName('mob-ripple')[0];
+            if (old) old.remove();
+            el.appendChild(circle);
+            setTimeout(() => circle.remove(), 600);
+        }
+        if (isMobile()) {
+            document.querySelectorAll('.interactive-element').forEach(el => {
+                el.addEventListener('mousedown', createMobRipple);
+                el.addEventListener('touchstart', createMobRipple, { passive: true });
+            });
+        }
 
         // ===== 移动端搜索 Spotlight =====
         function openMobileSearch() {
@@ -3451,6 +4027,11 @@
             const overlay = document.getElementById('mobile-search-overlay');
             if (overlay.classList.contains('hidden')) openMobileSearch();
             else closeMobileSearch();
+        });
+
+        // 顶栏猫抓 = 添加新链接（移动端专属入口，桌面用 #open-modal-btn）
+        document.getElementById('mobile-menu-btn')?.addEventListener('click', () => {
+            openCardModal('add');
         });
 
         const mobSearchInput = document.getElementById('mobile-search-input');
@@ -3493,8 +4074,6 @@
                         if (grid?.__sortable) grid.__sortable.destroy();
                         const sidebar = document.getElementById('floating-sidebar');
                         if (sidebar?.__sortable) sidebar.__sortable.destroy();
-                        const catGrid = document.getElementById('mobile-category-grid');
-                        if (catGrid?.__sortable) catGrid.__sortable.destroy();
                         renderAll();
                     }
                 }, 200);
@@ -3505,21 +4084,18 @@
     });
     </script>
     <!-- 手机底部导航（lg 以下显示） -->
-    <nav id="mobile-bottom-nav" class="mob-only fixed bottom-0 inset-x-0 z-40 h-16 backdrop-blur-xl bg-surface-container/80 border-t border-outline-variant/30 grid grid-cols-3" style="padding-bottom: var(--safe-bottom); height: calc(var(--mob-bottomnav-h) + var(--safe-bottom));">
-        <button type="button" data-tab="hub" class="mob-tab flex flex-col items-center justify-center gap-1 text-on-surface-variant active:scale-95 transition relative">
-            <span class="mob-tab-indicator absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-primary transition-all"></span>
-            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">home</span>
-            <span class="font-label-sm text-xs mob-tab-label">枢纽</span>
+    <nav id="mobile-bottom-nav" class="mob-only fixed bottom-0 inset-x-0 z-40 bg-surface/40 backdrop-blur-2xl rounded-t-[2rem] shadow-[0_-4px_24px_rgba(160,59,86,0.1)] flex justify-center items-center gap-10 px-4" style="padding-bottom: calc(var(--safe-bottom, 0px) + 6px); padding-top: 12px;">
+        <button type="button" data-tab="categories" class="flex flex-col items-center justify-center text-on-surface-variant/70 hover:text-primary transition-all p-2 mob-tab interactive-element" aria-label="分类">
+            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">category</span>
+            <span class="font-label-sm text-label-sm mt-1 mob-tab-label">分类</span>
         </button>
-        <button type="button" data-tab="categories" class="mob-tab flex flex-col items-center justify-center gap-1 text-on-surface-variant active:scale-95 transition relative">
-            <span class="mob-tab-indicator absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-transparent transition-all"></span>
-            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">apps</span>
-            <span class="font-label-sm text-xs mob-tab-label">分类</span>
+        <button type="button" data-tab="hub" class="mob-tab flex flex-row items-center gap-2 bg-primary text-on-primary rounded-full px-5 py-3 scale-110 shadow-lg shadow-primary/30 transition-transform hover:scale-115 active:scale-105 interactive-element" aria-label="枢纽">
+            <span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">pets</span>
+            <span class="font-label-sm text-label-sm">枢纽</span>
         </button>
-        <button type="button" data-tab="archive" class="mob-tab flex flex-col items-center justify-center gap-1 text-on-surface-variant active:scale-95 transition relative">
-            <span class="mob-tab-indicator absolute top-0 left-1/2 -translate-x-1/2 w-6 h-1 rounded-full bg-transparent transition-all"></span>
-            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">inventory_2</span>
-            <span class="font-label-sm text-xs mob-tab-label">档案</span>
+        <button type="button" data-tab="archive" class="flex flex-col items-center justify-center text-on-surface-variant/70 hover:text-primary transition-all p-2 mob-tab interactive-element" aria-label="档案">
+            <span class="material-symbols-outlined text-2xl mob-tab-icon" style="font-variation-settings: 'FILL' 0;">person</span>
+            <span class="font-label-sm text-label-sm mt-1 mob-tab-label">档案</span>
         </button>
     </nav>
 
@@ -3535,8 +4111,6 @@
     </div>
 
     <!-- 移动端分类网格（view=categories & 无 currentCategoryId 时显示） -->
-    <div id="mobile-category-grid" class="mob-only grid grid-cols-2 gap-3 px-4 pt-2" style="display: none;"></div>
-
     <!-- 移动端底部 Sheet 容器（showBottomSheet 渲染到这里） -->
     <div id="mobile-sheet-root" class="mob-only hidden"></div>
 </body>
