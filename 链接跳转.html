@@ -1051,6 +1051,13 @@
         max-height: 92vh !important;
         width: 100% !important;
     }
+    #categories-modal.mob-fullscreen > div {
+        border-radius: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: 100% !important;
+        max-height: 100% !important;
+    }
 }
 
 /* 桌面端：隐藏手机专属元素 */
@@ -2590,6 +2597,18 @@
         // ============================================
         const catModal = document.getElementById('categories-modal');
         function openCategoriesModal() {
+            if (isMobile()) {
+                const modal = document.getElementById('categories-modal');
+                if (modal) {
+                    modal.classList.add('mob-sheet-mode', 'mob-fullscreen');
+                    requestAnimationFrame(() => {
+                        modal.style.position = 'fixed';
+                        modal.style.inset = '0';
+                        modal.style.maxHeight = '100vh';
+                        modal.style.borderRadius = '0';
+                    });
+                }
+            }
             renderCategoryManageList();
             catModal.classList.remove('hidden');
             catModal.classList.add('flex');
